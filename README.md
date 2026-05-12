@@ -57,6 +57,19 @@ github-dev-metrics \
   --output reports/alan-github-metrics.md
 ```
 
+The commit cadence signal is configurable:
+
+```bash
+github-dev-metrics \
+  --developer alan-guerrero \
+  --org MedTrainer365 \
+  --repos medtrainer-react \
+  --week 2026-W18 \
+  --cadence-target 0.7 \
+  --cadence-min-days 4 \
+  --format markdown
+```
+
 ```bash
 github-dev-metrics \
   --developer alan-guerrero \
@@ -106,6 +119,8 @@ Commit activity:
 - Commit URLs when available
 - Noisy commit messages
 - Revert commits
+- Commit cadence based on active days in the selected period, including WIP commits as valid evidence of consistency
+- Commit cadence threshold can be adjusted with `--cadence-target` and `--cadence-min-days`
 
 Review participation:
 

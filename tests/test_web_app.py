@@ -49,9 +49,29 @@ class FakeGithubClient:
     def list_repo_commits(self, repo, author, since, until):
         return [
             {
-                "sha": "abc",
-                "commit": {"message": "Implement feature", "author": {"date": "2026-05-01T10:00:00Z"}},
-                "html_url": "https://github.com/MedTrainer365/medtrainer-react/commit/abc",
+                "sha": "abc1",
+                "commit": {"message": "WIP update banner", "author": {"date": "2026-04-27T10:00:00Z"}},
+                "html_url": "https://github.com/MedTrainer365/medtrainer-react/commit/abc1",
+            },
+            {
+                "sha": "abc2",
+                "commit": {"message": "Fix banner copy", "author": {"date": "2026-04-28T10:00:00Z"}},
+                "html_url": "https://github.com/MedTrainer365/medtrainer-react/commit/abc2",
+            },
+            {
+                "sha": "abc3",
+                "commit": {"message": "WIP refine header", "author": {"date": "2026-04-30T10:00:00Z"}},
+                "html_url": "https://github.com/MedTrainer365/medtrainer-react/commit/abc3",
+            },
+            {
+                "sha": "abc4",
+                "commit": {"message": "Final polish", "author": {"date": "2026-05-01T10:00:00Z"}},
+                "html_url": "https://github.com/MedTrainer365/medtrainer-react/commit/abc4",
+            },
+            {
+                "sha": "abc5",
+                "commit": {"message": "Tweak layout", "author": {"date": "2026-05-02T10:00:00Z"}},
+                "html_url": "https://github.com/MedTrainer365/medtrainer-react/commit/abc5",
             }
         ]
 
@@ -73,6 +93,8 @@ def test_build_report_payload_returns_renderable_report() -> None:
             "org": "MedTrainer365",
             "repos": "medtrainer-react",
             "week": "2026-W18",
+            "cadence_target": "0.7",
+            "cadence_min_days": "4",
             "format": "markdown",
         },
         client=FakeGithubClient(),
@@ -82,5 +104,5 @@ def test_build_report_payload_returns_renderable_report() -> None:
     assert payload["week"] == "2026-W18"
     assert "GitHub Developer Metrics - alan" in payload["markdown"]
     assert payload["metrics"]["pull_requests"]["opened"] == 1
+    assert payload["metrics"]["commit_activity"]["cadence"]["has_almost_daily_cadence"] is True
     assert payload["json"]["developer"] == "alan"
-

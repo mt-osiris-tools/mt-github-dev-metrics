@@ -88,6 +88,18 @@ def build_parser() -> argparse.ArgumentParser:
         help="Output format.",
     )
     parser.add_argument(
+        "--cadence-target",
+        type=float,
+        default=0.6,
+        help="Commit cadence coverage target as a fraction (default: 0.6).",
+    )
+    parser.add_argument(
+        "--cadence-min-days",
+        type=int,
+        default=5,
+        help="Minimum number of active commit days for the cadence signal (default: 5).",
+    )
+    parser.add_argument(
         "--output",
         help="Write the report to this path instead of stdout.",
     )
@@ -120,6 +132,10 @@ def main(argv: list[str] | None = None) -> int:
             date_to = end_of_day(parse_iso_date(args.date_to))
         if date_from > date_to:
             raise ValueError("--from must be earlier than or equal to --to.")
+        if not 0 < args.cadence_target <= 1:
+            raise ValueError("--cadence-target must be a fraction between 0 and 1.")
+        if args.cadence_min_days < 1:
+            raise ValueError("--cadence-min-days must be at least 1.")
         repos = [repo.strip() for repo in args.repos.split(",") if repo.strip()]
         if not repos:
             raise ValueError("At least one repository must be provided.")
@@ -127,7 +143,11 @@ def main(argv: list[str] | None = None) -> int:
         normalize_repo_specs(repos, args.org)
         client = GithubClient.from_env()
         metrics = collect_metrics(client, args.developer, args.org, repos, date_from, date_to)
-        calculated = calculate_metrics(metrics)
+        calculated = calculate_metrics(
+            metrics,
+            cadence_target=args.cadence_target,
+            cadence_min_active_days=args.cadence_min_days,
+        )
         if args.format == "markdown":
             report = render_markdown_report(calculated)
         else:

@@ -55,7 +55,60 @@ def _has_test_changes(pr: PullRequestRecord) -> tuple[bool, list[str]]:
     return (len(files) > 0, files)
 
 
-def calculate_metrics(data: DeveloperMetrics) -> DeveloperMetrics:
+def _commit_cadence(
+    commits: list[Any],
+    start_date: str,
+    end_date: str,
+    target_ratio: float,
+    min_active_days: int,
+) -> dict[str, Any]:
+    commit_dates = []
+    for commit in commits:
+        authored_at = getattr(commit, "authored_at", None)
+        dt = _parse_dt(authored_at)
+        if dt is not None:
+            commit_dates.append(dt.date())
+    if not commit_dates:
+        return {
+            "active_days": 0,
+            "period_days": 0,
+            "coverage_ratio": 0.0,
+            "has_almost_daily_cadence": False,
+            "max_gap_days": None,
+        }
+    start = _parse_dt(f"{start_date}T00:00:00Z")
+    end = _parse_dt(f"{end_date}T23:59:59Z")
+    if start and end:
+        period_days = (end.date() - start.date()).days + 1
+    else:
+        period_days = len(set(commit_dates))
+    unique_days = sorted(set(commit_dates))
+    active_days = len(unique_days)
+    coverage_ratio = active_days / period_days if period_days else 0.0
+    max_gap_days = 0
+    if len(unique_days) > 1:
+        gaps = [(b - a).days for a, b in zip(unique_days, unique_days[1:])]
+        max_gap_days = max(gaps)
+    has_almost_daily_cadence = (
+        period_days > 0
+        and active_days >= min_active_days
+        and coverage_ratio >= target_ratio
+    )
+    return {
+        "active_days": active_days,
+        "period_days": period_days,
+        "coverage_ratio": coverage_ratio,
+        "has_almost_daily_cadence": has_almost_daily_cadence,
+        "max_gap_days": max_gap_days,
+    }
+
+
+def calculate_metrics(
+    data: DeveloperMetrics,
+    *,
+    cadence_target: float = 0.6,
+    cadence_min_active_days: int = 5,
+) -> DeveloperMetrics:
     prs = data.prs
     commits = data.commits
 
@@ -113,6 +166,13 @@ def calculate_metrics(data: DeveloperMetrics) -> DeveloperMetrics:
     review_comments = sum(len(item.review_comments) for item in data.review_participation)
     commits_noisy = [commit for commit in commits if is_noisy_commit_message(commit.message)]
     revert_commits = [commit for commit in commits if is_revert_commit(commit.message)]
+    commit_cadence = _commit_cadence(
+        commits,
+        data.date_from,
+        data.date_to,
+        cadence_target,
+        cadence_min_active_days,
+    )
 
     positive_signals: list[str] = []
     if merged_prs:
@@ -123,6 +183,10 @@ def calculate_metrics(data: DeveloperMetrics) -> DeveloperMetrics:
         positive_signals.append(f"Submitted {submitted_reviews} review(s) on other PRs.")
     if commits:
         positive_signals.append(f"Authored {len(commits)} commit(s) in the selected repositories.")
+    if commit_cadence["has_almost_daily_cadence"]:
+        positive_signals.append(
+            f"Committed on {commit_cadence['active_days']} of {commit_cadence['period_days']} days ({commit_cadence['coverage_ratio'] * 100:.0f}% cadence), which aligns with an almost-daily practice using a {cadence_min_active_days}-day minimum and {cadence_target * 100:.0f}% target."
+        )
 
     opportunity_signals: list[str] = []
     if merged_without_test_changes:
@@ -142,6 +206,10 @@ def calculate_metrics(data: DeveloperMetrics) -> DeveloperMetrics:
     if commits_noisy:
         opportunity_signals.append(
             f"{len(commits_noisy)} commit(s) used noisy commit messages."
+        )
+    if commits and not commit_cadence["has_almost_daily_cadence"]:
+        opportunity_signals.append(
+            f"Commit cadence covered {commit_cadence['active_days']} of {commit_cadence['period_days']} days ({commit_cadence['coverage_ratio'] * 100:.0f}%), which is below the almost-daily target of {cadence_min_active_days} active days and {cadence_target * 100:.0f}% coverage."
         )
 
     metrics: dict[str, Any] = {
@@ -212,6 +280,7 @@ def calculate_metrics(data: DeveloperMetrics) -> DeveloperMetrics:
             "urls": [commit.url for commit in commits if commit.url],
             "noisy_commits": [commit.message for commit in commits_noisy],
             "revert_commits": [commit.message for commit in revert_commits],
+            "cadence": commit_cadence,
         },
         "review_participation": {
             "submitted_reviews": submitted_reviews,

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from datetime import datetime
 from typing import Any
 
 from .models import DeveloperMetrics, PullRequestRecord
@@ -18,6 +17,16 @@ def _fmt_number(value: float | int | None) -> str:
 
 def _fmt_date(value: str | None) -> str:
     return value or "-"
+
+
+def fmt_cadence(cadence: dict[str, Any]) -> str:
+    if not cadence:
+        return "-"
+    active_days = _fmt_number(cadence.get("active_days", 0))
+    period_days = _fmt_number(cadence.get("period_days", 0))
+    coverage_ratio = _fmt_number(cadence.get("coverage_ratio", 0) * 100)
+    marker = "almost-daily" if cadence.get("has_almost_daily_cadence") else "below target"
+    return f"{active_days}/{period_days} days ({coverage_ratio}%) - {marker}"
 
 
 def _pr_line(pr: PullRequestRecord, metrics: dict[str, Any]) -> str:
@@ -68,6 +77,7 @@ def render_markdown_report(data: DeveloperMetrics) -> str:
     lines.append("|---|---:|")
     pull_requests = metrics.get("pull_requests", {})
     commit_activity = metrics.get("commit_activity", {})
+    cadence = commit_activity.get("cadence", {})
     testing = metrics.get("testing", {})
     git_hygiene = metrics.get("git_hygiene", {})
     lines.extend(
@@ -75,6 +85,7 @@ def render_markdown_report(data: DeveloperMetrics) -> str:
             f"| PRs opened | {_fmt_number(pull_requests.get('opened', 0))} |",
             f"| PRs merged | {_fmt_number(pull_requests.get('merged', 0))} |",
             f"| Commits authored | {_fmt_number(commit_activity.get('authored_commits', 0))} |",
+            f"| Commit cadence | {fmt_cadence(cadence)} |",
             f"| PRs with tests | {_fmt_number(testing.get('prs_with_tests', 0))} |",
             f"| PRs without tests | {_fmt_number(testing.get('prs_without_tests', 0))} |",
             f"| PRs with requested changes | {_fmt_number(pull_requests.get('requested_changes', 0))} |",
@@ -119,6 +130,20 @@ def render_markdown_report(data: DeveloperMetrics) -> str:
     if commit_activity.get("revert_commits"):
         lines.append(f"- Revert commits: {', '.join(commit_activity['revert_commits'])}")
     lines.append("")
+    lines.append("## Commit Cadence Evidence")
+    if cadence:
+        lines.append(
+            f"- Active commit days: {_fmt_number(cadence.get('active_days', 0))} of {_fmt_number(cadence.get('period_days', 0))} ({_fmt_number(cadence.get('coverage_ratio', 0) * 100)}%)"
+        )
+        if cadence.get("has_almost_daily_cadence"):
+            lines.append("- The commit pattern is consistent with an almost-daily habit.")
+        else:
+            lines.append("- The commit pattern is less frequent than an almost-daily habit.")
+        if cadence.get("max_gap_days") is not None:
+            lines.append(f"- Largest gap between active days: {_fmt_number(cadence.get('max_gap_days'))} day(s)")
+    else:
+        lines.append("- No commit cadence data was available.")
+    lines.append("")
     lines.append("## Review Participation Evidence")
     review_participation = metrics.get("review_participation", {})
     lines.append(
@@ -150,4 +175,3 @@ def render_markdown_report(data: DeveloperMetrics) -> str:
         for limitation in data.limitations:
             lines.append(f"- {limitation}")
     return "\n".join(lines).strip() + "\n"
-

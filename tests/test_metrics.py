@@ -114,3 +114,110 @@ def test_pr_metrics_calculation() -> None:
     assert calculated.summary.positive_signals
     assert calculated.summary.opportunity_signals
 
+
+def test_commit_cadence_flags_almost_daily_pattern() -> None:
+    data = DeveloperMetrics(
+        developer="alan",
+        org="my-org",
+        repos=["my-org/frontend-app"],
+        date_from="2026-05-01",
+        date_to="2026-05-07",
+        commits=[
+            CommitRecord(
+                repo="my-org/frontend-app",
+                sha="a1",
+                message="WIP update banner",
+                url="https://github.com/my-org/frontend-app/commit/a1",
+                authored_at="2026-05-01T10:00:00Z",
+            ),
+            CommitRecord(
+                repo="my-org/frontend-app",
+                sha="a2",
+                message="Fix banner copy",
+                url="https://github.com/my-org/frontend-app/commit/a2",
+                authored_at="2026-05-02T10:00:00Z",
+            ),
+            CommitRecord(
+                repo="my-org/frontend-app",
+                sha="a3",
+                message="WIP refine header",
+                url="https://github.com/my-org/frontend-app/commit/a3",
+                authored_at="2026-05-04T10:00:00Z",
+            ),
+            CommitRecord(
+                repo="my-org/frontend-app",
+                sha="a4",
+                message="Final polish",
+                url="https://github.com/my-org/frontend-app/commit/a4",
+                authored_at="2026-05-05T10:00:00Z",
+            ),
+            CommitRecord(
+                repo="my-org/frontend-app",
+                sha="a5",
+                message="Tweak layout",
+                url="https://github.com/my-org/frontend-app/commit/a5",
+                authored_at="2026-05-06T10:00:00Z",
+            ),
+        ],
+    )
+
+    calculated = calculate_metrics(data)
+
+    cadence = calculated.metrics["commit_activity"]["cadence"]
+    assert cadence["active_days"] == 5
+    assert cadence["period_days"] == 7
+    assert cadence["has_almost_daily_cadence"] is True
+    assert any("almost-daily practice" in signal for signal in calculated.summary.positive_signals)
+
+
+def test_commit_cadence_respects_custom_thresholds() -> None:
+    data = DeveloperMetrics(
+        developer="alan",
+        org="my-org",
+        repos=["my-org/frontend-app"],
+        date_from="2026-05-01",
+        date_to="2026-05-07",
+        commits=[
+            CommitRecord(
+                repo="my-org/frontend-app",
+                sha="a1",
+                message="WIP update banner",
+                url="https://github.com/my-org/frontend-app/commit/a1",
+                authored_at="2026-05-01T10:00:00Z",
+            ),
+            CommitRecord(
+                repo="my-org/frontend-app",
+                sha="a2",
+                message="Fix banner copy",
+                url="https://github.com/my-org/frontend-app/commit/a2",
+                authored_at="2026-05-02T10:00:00Z",
+            ),
+            CommitRecord(
+                repo="my-org/frontend-app",
+                sha="a3",
+                message="WIP refine header",
+                url="https://github.com/my-org/frontend-app/commit/a3",
+                authored_at="2026-05-04T10:00:00Z",
+            ),
+            CommitRecord(
+                repo="my-org/frontend-app",
+                sha="a4",
+                message="Final polish",
+                url="https://github.com/my-org/frontend-app/commit/a4",
+                authored_at="2026-05-05T10:00:00Z",
+            ),
+            CommitRecord(
+                repo="my-org/frontend-app",
+                sha="a5",
+                message="Tweak layout",
+                url="https://github.com/my-org/frontend-app/commit/a5",
+                authored_at="2026-05-06T10:00:00Z",
+            ),
+        ],
+    )
+
+    calculated = calculate_metrics(data, cadence_target=0.8, cadence_min_active_days=6)
+
+    cadence = calculated.metrics["commit_activity"]["cadence"]
+    assert cadence["has_almost_daily_cadence"] is False
+    assert any("below the almost-daily target" in signal for signal in calculated.summary.opportunity_signals)
