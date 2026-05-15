@@ -102,6 +102,18 @@ HTML_TEMPLATE = """<!doctype html>
     button:hover, .button-link:hover { filter: brightness(0.97); }
     .hint { color: var(--muted); font-size: 13px; line-height: 1.45; margin-top: 8px; }
     .error { color: var(--danger); font-weight: 600; margin-top: 12px; white-space: pre-wrap; }
+    .error-banner {
+      display: grid;
+      gap: 6px;
+      padding: 14px 16px;
+      margin-top: 12px;
+      border-radius: 16px;
+      border: 1px solid rgba(180, 35, 24, 0.2);
+      background: #fef2f2;
+      color: #991b1b;
+    }
+    .error-banner strong { font-size: 14px; }
+    .error-banner span { font-size: 13px; line-height: 1.45; color: #7f1d1d; }
     .output { padding: 20px; min-height: 260px; }
     .stats {
       display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 18px;
@@ -745,6 +757,7 @@ HTML_TEMPLATE = """<!doctype html>
       const reviewParticipation = metrics.review_participation || {};
       const prs = report.prs || [];
       const summary = report.summary || {};
+      const cadence = commitActivity.cadence || {};
       const prsOpened = Number(pullRequests.opened || 0);
       const prsMerged = Number(pullRequests.merged || 0);
       const prsWithTests = Number(testing.prs_with_tests || 0);
@@ -1000,14 +1013,16 @@ HTML_TEMPLATE = """<!doctype html>
       result.innerHTML = `<pre class="raw-pre">${escapeHtml(current.raw || 'No JSON available.')}</pre>`;
     }
 
-    function setError(message) {
+    function setError(message, detail = '') {
       if (!message) {
         formError.hidden = true;
-        formError.textContent = '';
+        formError.innerHTML = '';
         return;
       }
       formError.hidden = false;
-      formError.textContent = message;
+      const safeMessage = escapeHtml(message);
+      const safeDetail = detail ? `<span>${escapeHtml(detail)}</span>` : '';
+      formError.innerHTML = `<div class="error-banner"><strong>${safeMessage}</strong>${safeDetail}</div>`;
     }
 
     function setActiveView(view) {
@@ -1151,7 +1166,10 @@ HTML_TEMPLATE = """<!doctype html>
         downloadJson.href = 'data:application/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(data.report.json, null, 2));
         setActiveView(payload.format === 'json' ? 'raw' : 'detail');
       } catch (error) {
-        setError(error.message);
+        setError(
+          'Report generation failed.',
+          'Check the repository name, date range, cadence settings, and GitHub token access. Technical detail: ' + error.message,
+        );
         resultMeta.textContent = 'No report generated.';
         result.innerHTML = '<div class="empty-state">Use the form to generate a report.</div>';
       }
