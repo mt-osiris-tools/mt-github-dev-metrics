@@ -29,109 +29,498 @@ HTML_TEMPLATE = """<!doctype html>
   <style>
     :root {
       color-scheme: light;
-      --bg: #f4f0e8;
-      --panel: #ffffff;
-      --text: #1f2937;
-      --muted: #6b7280;
-      --border: #d1c7b7;
+      --bg: #f3efe6;
+      --bg-soft: #faf7f0;
+      --panel: rgba(255, 255, 255, 0.88);
+      --panel-solid: #ffffff;
+      --text: #172033;
+      --muted: #5f697d;
+      --border: #d6cbb8;
+      --border-strong: #c6b59c;
       --accent: #0f766e;
       --accent-dark: #115e59;
-      --shadow: 0 12px 40px rgba(15, 23, 42, 0.08);
+      --accent-alt: #7c3aed;
+      --shadow: 0 18px 55px rgba(15, 23, 42, 0.10);
+      --shadow-soft: 0 10px 24px rgba(15, 23, 42, 0.06);
       --danger: #b42318;
     }
     * { box-sizing: border-box; }
     body {
       margin: 0;
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-      background: radial-gradient(circle at top left, rgba(15, 118, 110, 0.10), transparent 26%),
-                  linear-gradient(180deg, #f8f4ed 0%, #f4f0e8 100%);
+      background:
+        radial-gradient(circle at 12% 8%, rgba(15, 118, 110, 0.14), transparent 22%),
+        radial-gradient(circle at 88% 0%, rgba(124, 58, 237, 0.10), transparent 20%),
+        linear-gradient(180deg, #faf7f0 0%, #f3efe6 100%);
       color: var(--text);
     }
-    .wrap { max-width: 1180px; margin: 0 auto; padding: 32px 20px 48px; }
+    h1, .section-title, .detail-header h2, .detail-section-title h3, .toc-card h3, .comparison-panel h4, .bar-label {
+      font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    }
+    .wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 36px 20px 56px;
+    }
     .hero {
       display: grid;
       gap: 18px;
-      grid-template-columns: 1.35fr 0.65fr;
+      grid-template-columns: 1.35fr 0.75fr;
       align-items: stretch;
-      margin-bottom: 24px;
+      margin-bottom: 10px;
     }
     .card {
       background: var(--panel);
-      border: 1px solid rgba(209, 199, 183, 0.75);
+      backdrop-filter: blur(18px);
+      border: 1px solid rgba(214, 203, 184, 0.78);
       border-radius: 20px;
       box-shadow: var(--shadow);
     }
-    .hero-copy { padding: 28px; }
-    .eyebrow { text-transform: uppercase; letter-spacing: 0.14em; color: var(--accent); font-size: 12px; font-weight: 700; }
-    h1 { margin: 10px 0 12px; font-size: clamp(2rem, 4vw, 3.5rem); line-height: 1.02; }
-    .lede { margin: 0; color: var(--muted); font-size: 1rem; max-width: 62ch; }
+    .hero-copy {
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-copy,
+    .form-shell {
+      isolation: isolate;
+    }
+    .hero-copy::before,
+    .form-shell::before {
+      content: '';
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 5px;
+      background: linear-gradient(90deg, rgba(15, 118, 110, 0.95), rgba(124, 58, 237, 0.78));
+      pointer-events: none;
+    }
+    .hero-copy::after {
+      content: '';
+      position: absolute;
+      inset: auto -80px -120px auto;
+      width: 260px;
+      height: 260px;
+      background: radial-gradient(circle, rgba(15, 118, 110, 0.16), transparent 68%);
+      pointer-events: none;
+    }
+    .eyebrow {
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 800;
+    }
+    h1 {
+      margin: 8px 0 10px;
+      font-size: clamp(1.95rem, 3.6vw, 3.1rem);
+      line-height: 0.96;
+      letter-spacing: -0.04em;
+      max-width: 14ch;
+    }
+    .lede {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.98rem;
+      line-height: 1.6;
+      max-width: 62ch;
+    }
+    .hero-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 14px;
+    }
+    .hero-badges .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.72);
+      border: 1px solid rgba(214, 203, 184, 0.72);
+      color: #243042;
+      font-size: 12px;
+      font-weight: 700;
+      box-shadow: var(--shadow-soft);
+    }
+    .hero-note {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 14px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(15, 118, 110, 0.16);
+      background: rgba(15, 118, 110, 0.06);
+      color: var(--accent-dark);
+      font-size: 13px;
+      font-weight: 700;
+    }
     .hero-meta {
       display: grid;
-      gap: 14px;
-      padding: 24px;
-      background: linear-gradient(180deg, #0f766e 0%, #115e59 100%);
+      gap: 12px;
+      padding: 20px;
+      background:
+        linear-gradient(180deg, rgba(15, 118, 110, 0.98) 0%, rgba(17, 94, 89, 0.98) 100%);
       color: white;
+    }
+    .hero-meta .meta-title {
+      margin: 0 0 2px;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: rgba(255, 255, 255, 0.75);
+      font-weight: 800;
+    }
+    .hero-meta .meta-copy {
+      margin: 0;
+      font-size: 14px;
+      line-height: 1.55;
+      color: rgba(255, 255, 255, 0.88);
     }
     .hero-meta .chip {
       display: inline-flex; width: fit-content; align-items: center; gap: 8px;
-      background: rgba(255,255,255,0.16); border: 1px solid rgba(255,255,255,0.24);
-      padding: 8px 12px; border-radius: 999px; font-size: 13px;
+      background: rgba(255,255,255,0.14); border: 1px solid rgba(255,255,255,0.22);
+      padding: 7px 11px; border-radius: 999px; font-size: 12px; font-weight: 700;
+    }
+    .page-bridge {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 14px;
+      align-items: center;
+      margin: 0 0 12px;
+    }
+    .page-bridge::before,
+    .page-bridge::after {
+      content: '';
+      height: 1px;
+      background: linear-gradient(90deg, rgba(214, 203, 184, 0), rgba(214, 203, 184, 0.9), rgba(214, 203, 184, 0));
+    }
+    .page-bridge span {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.8);
+      border: 1px solid rgba(214, 203, 184, 0.72);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      box-shadow: var(--shadow-soft);
     }
     .grid {
       display: grid;
-      grid-template-columns: 380px 1fr;
+      grid-template-columns: 360px 1fr;
       gap: 20px;
       align-items: start;
     }
-    form { padding: 20px; }
-    .section-title { margin: 0 0 14px; font-size: 18px; }
-    label { display: block; margin: 14px 0 8px; font-size: 13px; font-weight: 700; color: #374151; }
+    .form-shell {
+      position: sticky;
+      top: 20px;
+      align-self: start;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.90), rgba(255, 255, 255, 0.84));
+      overflow: hidden;
+    }
+    form {
+      padding: 22px;
+      margin-top: 5px;
+    }
+    .form-intro {
+      display: grid;
+      gap: 8px;
+      margin-bottom: 16px;
+      padding: 16px 16px 14px;
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(247, 244, 237, 0.92), rgba(255, 255, 255, 0.96));
+      border: 1px solid rgba(214, 203, 184, 0.75);
+      box-shadow: var(--shadow-soft);
+    }
+    .form-kicker {
+      margin: 0;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--accent);
+    }
+    .form-intro h2 {
+      margin: 0;
+      font-size: 20px;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+    }
+    .form-intro p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.55;
+    }
+    .section-title {
+      margin: 0 0 14px;
+      font-size: 18px;
+      letter-spacing: -0.02em;
+    }
+    .form-section {
+      margin-top: 18px;
+      padding-top: 18px;
+      border-top: 1px solid rgba(214, 203, 184, 0.72);
+    }
+    .form-section:first-of-type {
+      margin-top: 0;
+      padding-top: 0;
+      border-top: 0;
+    }
+    .form-section-title {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: baseline;
+      margin-bottom: 10px;
+    }
+    .form-section-title h3 {
+      margin: 0;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #44506b;
+      font-weight: 800;
+    }
+    .form-section-title span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+    label {
+      display: block;
+      margin: 14px 0 8px;
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #44506b;
+    }
     input, select, textarea {
-      width: 100%; border: 1px solid var(--border); border-radius: 12px;
-      padding: 12px 14px; font: inherit; background: white; color: var(--text);
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px 14px;
+      font: inherit;
+      background: rgba(255, 255, 255, 0.95);
+      color: var(--text);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
+      transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
     }
-    textarea { min-height: 84px; resize: vertical; }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: rgba(15, 118, 110, 0.55);
+      box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.12);
+    }
+    textarea { min-height: 90px; resize: vertical; }
     .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .actions { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
-    button, .button-link {
-      appearance: none; border: 0; border-radius: 12px; padding: 12px 16px; font: inherit;
-      background: var(--accent); color: white; cursor: pointer; text-decoration: none; display: inline-flex;
-      align-items: center; justify-content: center;
+    .stack { display: grid; gap: 12px; }
+    .field-hint {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
     }
-    button.secondary, .button-link.secondary { background: #e5e7eb; color: #111827; }
-    button:hover, .button-link:hover { filter: brightness(0.97); }
-    .hint { color: var(--muted); font-size: 13px; line-height: 1.45; margin-top: 8px; }
-    .error { color: var(--danger); font-weight: 600; margin-top: 12px; white-space: pre-wrap; }
+    .actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 18px;
+      flex-wrap: wrap;
+    }
+    .actions-primary {
+      margin-top: 18px;
+      padding-top: 18px;
+      border-top: 1px solid rgba(214, 203, 184, 0.72);
+    }
+    .actions-primary .hint {
+      margin-top: 12px;
+    }
+    button, .button-link {
+      appearance: none;
+      border: 0;
+      border-radius: 14px;
+      padding: 12px 16px;
+      font: inherit;
+      background: linear-gradient(180deg, var(--accent) 0%, var(--accent-dark) 100%);
+      color: white;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 18px rgba(15, 118, 110, 0.18);
+      transition: transform 160ms ease, box-shadow 160ms ease, filter 160ms ease;
+    }
+    button:hover, .button-link:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 12px 24px rgba(15, 118, 110, 0.22);
+    }
+    button:active, .button-link:active { transform: translateY(0); box-shadow: 0 8px 16px rgba(15, 118, 110, 0.16); }
+    button.secondary, .button-link.secondary {
+      background: rgba(255, 255, 255, 0.9);
+      color: #243042;
+      border: 1px solid rgba(214, 203, 184, 0.95);
+      box-shadow: none;
+    }
+    .hint {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+      margin-top: 8px;
+    }
+    .error {
+      color: var(--danger);
+      font-weight: 600;
+      margin-top: 12px;
+      white-space: pre-wrap;
+    }
     .error-banner {
       display: grid;
       gap: 6px;
       padding: 14px 16px;
       margin-top: 12px;
-      border-radius: 16px;
+      border-radius: 18px;
       border: 1px solid rgba(180, 35, 24, 0.2);
       background: #fef2f2;
       color: #991b1b;
     }
     .error-banner strong { font-size: 14px; }
     .error-banner span { font-size: 13px; line-height: 1.45; color: #7f1d1d; }
-    .output { padding: 20px; min-height: 260px; }
+    .output {
+      padding: 20px;
+      min-height: 260px;
+      position: relative;
+      overflow: hidden;
+    }
+    .output::before {
+      content: '';
+      position: absolute;
+      inset: 0 auto auto 0;
+      width: 100%;
+      height: 6px;
+      background: linear-gradient(90deg, rgba(15, 118, 110, 0.95), rgba(124, 58, 237, 0.82));
+    }
+    .result-intro {
+      display: grid;
+      gap: 8px;
+      margin-bottom: 16px;
+      padding: 16px 18px;
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(247, 244, 237, 0.92), rgba(255, 255, 255, 0.96));
+      border: 1px solid rgba(214, 203, 184, 0.75);
+      box-shadow: var(--shadow-soft);
+    }
+    .result-intro-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+    .result-kicker {
+      margin: 0;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--accent);
+    }
+    .result-intro h3 {
+      margin: 4px 0 0;
+      font-size: 20px;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+    }
+    .result-intro p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.6;
+      max-width: 72ch;
+    }
+    .result-rail {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .result-rail .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(15, 118, 110, 0.08);
+      border: 1px solid rgba(15, 118, 110, 0.12);
+      color: var(--accent-dark);
+      font-size: 12px;
+      font-weight: 800;
+    }
     .stats {
-      display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 18px;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 16px;
     }
     .stat {
-      background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 16px; padding: 14px;
+      background: linear-gradient(180deg, rgba(249, 250, 251, 0.95), rgba(255, 255, 255, 0.96));
+      border: 1px solid #e5e7eb;
+      border-radius: 16px;
+      padding: 14px;
+      box-shadow: var(--shadow-soft);
     }
-    .stat .label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; }
-    .stat .value { font-size: 24px; font-weight: 800; margin-top: 4px; }
-    .tabs { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+    .stat .label {
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .stat .value {
+      font-size: 24px;
+      font-weight: 800;
+      margin-top: 4px;
+      letter-spacing: -0.03em;
+    }
+    .tabs {
+      display: inline-flex;
+      gap: 8px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+      padding: 8px;
+      border-radius: 18px;
+      background: rgba(249, 250, 251, 0.72);
+      border: 1px solid rgba(214, 203, 184, 0.78);
+      box-shadow: var(--shadow-soft);
+    }
     .tab {
-      border: 1px solid var(--border); background: #f9fafb; color: #111827; border-radius: 999px;
-      padding: 8px 14px; cursor: pointer;
+      border: 1px solid transparent;
+      background: transparent;
+      color: #4b5563;
+      border-radius: 999px;
+      padding: 9px 14px;
+      cursor: pointer;
+      box-shadow: none;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      transition: background 160ms ease, color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
     }
-    .tab.active { background: var(--accent); color: white; border-color: var(--accent); }
+    .tab:hover {
+      background: rgba(255, 255, 255, 0.78);
+      color: #111827;
+    }
+    .tab.active {
+      background: linear-gradient(180deg, var(--accent) 0%, var(--accent-dark) 100%);
+      color: white;
+      border-color: rgba(15, 118, 110, 0.2);
+      box-shadow: 0 8px 18px rgba(15, 118, 110, 0.18);
+    }
     .report-view {
       border-radius: 18px;
       min-height: 300px;
+      padding-top: 4px;
     }
     .detail-shell {
       display: grid;
@@ -147,10 +536,11 @@ HTML_TEMPLATE = """<!doctype html>
       position: sticky;
       top: 20px;
       align-self: start;
-      background: #fff;
+      background: rgba(255, 255, 255, 0.92);
       border: 1px solid #e5ded3;
       border-radius: 18px;
       padding: 16px;
+      box-shadow: var(--shadow-soft);
     }
     .toc-card h3 {
       margin: 0 0 10px;
@@ -167,18 +557,25 @@ HTML_TEMPLATE = """<!doctype html>
       display: flex;
       justify-content: space-between;
       gap: 10px;
+      padding: 6px 8px;
+      margin: 0 -8px;
+      border-radius: 10px;
     }
-    .toc-links a:hover { text-decoration: underline; }
+    .toc-links a:hover {
+      text-decoration: none;
+      background: rgba(15, 118, 110, 0.06);
+    }
     .toc-count {
       color: var(--muted);
       font-size: 12px;
       font-weight: 700;
     }
     .detail-card {
-      background: #fff;
+      background: rgba(255, 255, 255, 0.92);
       border: 1px solid #e5ded3;
       border-radius: 18px;
       padding: 18px;
+      box-shadow: var(--shadow-soft);
     }
     .detail-header {
       display: flex;
@@ -189,7 +586,9 @@ HTML_TEMPLATE = """<!doctype html>
     }
     .detail-header h2 {
       margin: 4px 0 6px;
-      font-size: 24px;
+      font-size: 28px;
+      line-height: 1.08;
+      letter-spacing: -0.03em;
     }
     .detail-grid {
       display: grid;
@@ -197,10 +596,11 @@ HTML_TEMPLATE = """<!doctype html>
       gap: 10px;
     }
     .detail-metric {
-      background: #f9fafb;
+      background: linear-gradient(180deg, rgba(249, 250, 251, 0.96), rgba(255, 255, 255, 0.98));
       border: 1px solid #e5e7eb;
       border-radius: 16px;
       padding: 14px;
+      box-shadow: var(--shadow-soft);
     }
     .detail-metric .label {
       color: var(--muted);
@@ -212,6 +612,7 @@ HTML_TEMPLATE = """<!doctype html>
       font-size: 26px;
       font-weight: 800;
       margin-top: 4px;
+      letter-spacing: -0.04em;
     }
     .detail-section-title {
       display: flex;
@@ -230,10 +631,11 @@ HTML_TEMPLATE = """<!doctype html>
       gap: 12px;
     }
     .summary-box {
-      background: #f9fafb;
+      background: linear-gradient(180deg, rgba(249, 250, 251, 0.96), rgba(255, 255, 255, 0.98));
       border: 1px solid #e5e7eb;
       border-radius: 16px;
       padding: 14px;
+      box-shadow: var(--shadow-soft);
     }
     .summary-box h4 {
       margin: 0 0 8px;
@@ -262,6 +664,7 @@ HTML_TEMPLATE = """<!doctype html>
       font-size: 12px;
       font-weight: 700;
       border: 1px solid transparent;
+      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.5) inset;
     }
     .badge.good { background: #ecfdf5; color: #047857; border-color: #a7f3d0; }
     .badge.warn { background: #fef3c7; color: #92400e; border-color: #fcd34d; }
@@ -273,48 +676,173 @@ HTML_TEMPLATE = """<!doctype html>
     }
     .filter-bar {
       display: grid;
-      grid-template-columns: 1.1fr 0.7fr 0.7fr 0.5fr;
+      grid-template-columns: 1.2fr 0.7fr 0.7fr auto auto auto;
       gap: 10px;
       margin-bottom: 14px;
+      padding: 14px;
+      border-radius: 18px;
+      background: rgba(249, 250, 251, 0.78);
+      border: 1px solid rgba(214, 203, 184, 0.72);
+      box-shadow: var(--shadow-soft);
+      align-items: center;
     }
     .filter-bar input, .filter-bar select {
-      border-radius: 12px;
-      padding: 10px 12px;
+      border-radius: 14px;
+      padding: 11px 12px;
     }
     .filter-toggle {
       display: inline-flex;
       align-items: center;
       gap: 8px;
       border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 10px 12px;
-      background: #fff;
+      border-radius: 14px;
+      padding: 11px 12px;
+      background: rgba(255, 255, 255, 0.9);
       font-size: 13px;
       color: #374151;
+      white-space: nowrap;
     }
     .filter-toggle input { width: auto; }
     .pr-card {
       border: 1px solid #e5e7eb;
       border-radius: 16px;
-      background: #fafafa;
+      background: linear-gradient(180deg, rgba(250, 250, 250, 0.98), rgba(255, 255, 255, 0.98));
       overflow: hidden;
+      box-shadow: var(--shadow-soft);
     }
     .pr-card summary {
       list-style: none;
       cursor: pointer;
+      display: grid;
+      gap: 12px;
+      padding: 16px 16px 14px;
+    }
+    .pr-card summary::-webkit-details-marker { display: none; }
+    .pr-summary-top {
       display: flex;
       justify-content: space-between;
       gap: 12px;
       align-items: flex-start;
-      padding: 14px 16px;
     }
-    .pr-card summary::-webkit-details-marker { display: none; }
+    .pr-summary-main {
+      display: grid;
+      gap: 7px;
+      min-width: 0;
+    }
+    .pr-summary-kicker {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      gap: 6px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      background: rgba(15, 118, 110, 0.08);
+      border: 1px solid rgba(15, 118, 110, 0.12);
+      color: var(--accent-dark);
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .pr-summary-title {
+      font-size: 18px;
+      font-weight: 800;
+      line-height: 1.25;
+      letter-spacing: -0.02em;
+      color: #111827;
+      overflow-wrap: anywhere;
+    }
+    .pr-summary-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .pr-summary-stats {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .pr-summary-stat {
+      background: rgba(249, 250, 251, 0.94);
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      padding: 10px 12px;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    }
+    .pr-summary-stat .label {
+      color: var(--muted);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 2px;
+    }
+    .pr-summary-stat .value {
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: #111827;
+    }
     .pr-card-body {
       border-top: 1px solid #e5e7eb;
-      padding: 14px 16px 16px;
-      background: #fff;
+      padding: 16px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(250, 250, 250, 0.96));
       display: grid;
+      gap: 14px;
+    }
+    .pr-body-note {
+      display: flex;
+      justify-content: space-between;
       gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: rgba(15, 118, 110, 0.06);
+      border: 1px solid rgba(15, 118, 110, 0.10);
+      color: #1f3b39;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .pr-body-note strong {
+      font-size: 13px;
+      letter-spacing: 0.01em;
+    }
+    .pr-evidence-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .pr-evidence-card {
+      background: rgba(255, 255, 255, 0.98);
+      border: 1px solid #e5e7eb;
+      border-radius: 16px;
+      padding: 14px;
+      box-shadow: var(--shadow-soft);
+    }
+    .pr-evidence-card.wide {
+      grid-column: 1 / -1;
+    }
+    .pr-evidence-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: flex-start;
+      margin-bottom: 10px;
+    }
+    .pr-evidence-head h4 {
+      margin: 0;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #1f2937;
+    }
+    .pr-evidence-head .meta {
+      margin: 0;
+      font-size: 12px;
+      text-align: right;
     }
     .pr-title {
       font-size: 15px;
@@ -333,6 +861,8 @@ HTML_TEMPLATE = """<!doctype html>
       display: flex;
       gap: 8px;
       flex-wrap: wrap;
+      justify-content: flex-end;
+      align-items: flex-start;
     }
     .pill {
       display: inline-flex;
@@ -377,18 +907,50 @@ HTML_TEMPLATE = """<!doctype html>
       border: 1px dashed #d1d5db;
       padding: 18px;
       border-radius: 16px;
-      background: #fcfcfd;
+      background: linear-gradient(180deg, rgba(252, 252, 253, 0.96), rgba(255, 255, 255, 0.98));
+    }
+    .loading-state {
+      display: grid;
+      gap: 10px;
+      place-items: start;
+      color: #334155;
+      border: 1px solid rgba(214, 203, 184, 0.72);
+      background: linear-gradient(180deg, rgba(247, 244, 237, 0.92), rgba(255, 255, 255, 0.96));
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: var(--shadow-soft);
+    }
+    .loading-state .loading-label {
+      margin: 0;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--accent);
+    }
+    .loading-state h3 {
+      margin: 0;
+      font-size: 18px;
+      letter-spacing: -0.02em;
+    }
+    .loading-state p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.55;
+      max-width: 60ch;
     }
     .raw-pre {
       margin: 0;
       white-space: pre-wrap;
       word-break: break-word;
-      background: #0b1020;
+      background: linear-gradient(180deg, #0b1020 0%, #111827 100%);
       color: #e5eefc;
       border-radius: 16px;
       padding: 16px;
       overflow: auto;
       max-height: 70vh;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
     }
     .meta { color: var(--muted); font-size: 13px; margin-bottom: 12px; }
     .summary-bars {
@@ -398,10 +960,11 @@ HTML_TEMPLATE = """<!doctype html>
       margin-top: 14px;
     }
     .bar-card {
-      background: #f9fafb;
+      background: linear-gradient(180deg, rgba(249, 250, 251, 0.96), rgba(255, 255, 255, 0.98));
       border: 1px solid #e5e7eb;
       border-radius: 16px;
       padding: 14px;
+      box-shadow: var(--shadow-soft);
     }
     .bar-top {
       display: flex;
@@ -433,14 +996,17 @@ HTML_TEMPLATE = """<!doctype html>
       margin-top: 14px;
     }
     .comparison-panel {
-      background: #fff;
+      background: rgba(255, 255, 255, 0.92);
       border: 1px solid #e5e7eb;
       border-radius: 16px;
       padding: 14px;
+      box-shadow: var(--shadow-soft);
     }
     .comparison-panel h4 {
       margin: 0 0 8px;
       font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
     }
     .comparison-panel p {
       margin: 0;
@@ -452,7 +1018,17 @@ HTML_TEMPLATE = """<!doctype html>
       .hero, .grid { grid-template-columns: 1fr; }
       .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .toc-shell, .filter-bar, .summary-bars, .comparison-grid { grid-template-columns: 1fr; }
-      .detail-grid, .summary-columns, .pr-meta { grid-template-columns: 1fr; }
+      .detail-grid, .summary-columns, .pr-meta, .pr-summary-stats, .pr-evidence-grid, .row { grid-template-columns: 1fr; }
+      .form-shell, .toc-card { position: static; top: auto; }
+      .result-intro-top { align-items: stretch; }
+      .pr-summary-top { flex-direction: column; }
+      .pill-row { justify-content: flex-start; }
+      .pr-evidence-head .meta { text-align: left; }
+      .tabs { display: flex; }
+      .filter-bar { justify-items: stretch; }
+      .page-bridge { grid-template-columns: 1fr; }
+      .page-bridge::before,
+      .page-bridge::after { display: none; }
     }
   </style>
 </head>
@@ -461,81 +1037,140 @@ HTML_TEMPLATE = """<!doctype html>
     <div class="hero">
       <div class="card hero-copy">
         <div class="eyebrow">GitHub Dev Metrics</div>
-        <h1>Local review reports for developers.</h1>
-        <p class="lede">Generate manager-friendly Markdown and JSON reports from GitHub activity across a date range or ISO week. The app reuses the same metric engine as the CLI.</p>
+        <h1>Read GitHub work like a report, not a log.</h1>
+        <p class="lede">Generate manager-friendly Markdown and JSON reports from GitHub activity across a date range or ISO week. The output is tuned for review conversations, not raw telemetry.</p>
+        <div class="hero-badges">
+          <span class="chip">Narrative-first summary</span>
+          <span class="chip">Evidence-backed PR review</span>
+          <span class="chip">Markdown and JSON exports</span>
+        </div>
+        <div class="hero-note">Fast local analysis with a cleaner report workflow and better evidence layout.</div>
       </div>
       <div class="card hero-meta">
+        <p class="meta-title">At a glance</p>
+        <p class="meta-copy">Use the same data engine as the CLI, preview the report here, and export a polished summary for a 1:1, a status note, or a performance discussion.</p>
         <div class="chip">Runs locally</div>
         <div class="chip">Uses GITHUB_TOKEN from your shell or .env</div>
         <div class="chip">Supports markdown and JSON output</div>
       </div>
     </div>
 
+    <div class="page-bridge">
+      <span>Review brief on the left, evidence surface on the right</span>
+    </div>
+
     <div class="grid">
-      <div class="card">
+      <div class="card form-shell">
         <form id="report-form">
-          <h2 class="section-title">Report inputs</h2>
-          <label for="developer">Developer</label>
-          <input id="developer" name="developer" placeholder="alan-guerrero" required>
-
-          <label for="org">Organization</label>
-          <input id="org" name="org" placeholder="MedTrainer365">
-
-          <label for="repos">Repositories</label>
-          <textarea id="repos" name="repos" placeholder="medtrainer-react,design-system or MedTrainer365/medtrainer-react" required></textarea>
-          <div class="hint">Use comma-separated repo names. If you provide only repo names, the organization field fills in the owner.</div>
-
-          <div class="row">
-            <div>
-              <label for="week">ISO Week</label>
-              <input id="week" name="week" placeholder="2026-W18">
-            </div>
-            <div>
-              <label for="format">Output</label>
-              <select id="format" name="format">
-                <option value="markdown">Markdown preview</option>
-                <option value="json">JSON preview</option>
-              </select>
-            </div>
+          <div class="form-intro">
+            <p class="form-kicker">Inputs</p>
+            <h2>Choose the review window and repository scope.</h2>
+            <p>Keep the inputs narrow enough to tell a clean story. Use a week or a date range, then select the output you want to inspect.</p>
           </div>
 
-          <div class="row">
-            <div>
-              <label for="cadence_target">Cadence target</label>
-              <input id="cadence_target" name="cadence_target" type="number" min="0.1" max="1" step="0.05" value="0.6">
+          <div class="form-section">
+            <div class="form-section-title">
+              <h3>Scope</h3>
+              <span>Who and where</span>
             </div>
-            <div>
-              <label for="cadence_min_days">Min active days</label>
-              <input id="cadence_min_days" name="cadence_min_days" type="number" min="1" step="1" value="5">
-              <div class="actions" style="margin-top: 10px;">
-                <button type="button" class="secondary" id="reset-cadence">Reset cadence settings</button>
+            <div class="stack">
+              <div>
+                <label for="developer">Developer</label>
+                <input id="developer" name="developer" placeholder="alan-guerrero" required>
+              </div>
+              <div>
+                <label for="org">Organization</label>
+                <input id="org" name="org" placeholder="MedTrainer365">
+              </div>
+              <div>
+                <label for="repos">Repositories</label>
+                <textarea id="repos" name="repos" placeholder="medtrainer-react,design-system or MedTrainer365/medtrainer-react" required></textarea>
+                <div class="field-hint">Comma-separated repositories. If you only enter repo names, the organization field is used as the owner.</div>
               </div>
             </div>
           </div>
 
-          <div class="row">
-            <div>
-              <label for="date_from">From</label>
-              <input id="date_from" name="date_from" type="date">
+          <div class="form-section">
+            <div class="form-section-title">
+              <h3>Window</h3>
+              <span>Week or date range</span>
             </div>
-            <div>
-              <label for="date_to">To</label>
-              <input id="date_to" name="date_to" type="date">
+            <div class="row">
+              <div>
+                <label for="week">ISO Week</label>
+                <input id="week" name="week" placeholder="2026-W18">
+                <div class="field-hint">Use ISO week format like <code>2026-W18</code>.</div>
+              </div>
+              <div>
+                <label for="format">Output</label>
+                <select id="format" name="format">
+                  <option value="markdown">Markdown preview</option>
+                  <option value="json">JSON preview</option>
+                </select>
+              </div>
+            </div>
+            <div class="row">
+              <div>
+                <label for="date_from">From</label>
+                <input id="date_from" name="date_from" type="date">
+              </div>
+              <div>
+                <label for="date_to">To</label>
+                <input id="date_to" name="date_to" type="date">
+              </div>
+            </div>
+            <div class="field-hint">Use either week or from/to, not both.</div>
+          </div>
+
+          <div class="form-section">
+            <div class="form-section-title">
+              <h3>Cadence</h3>
+              <span>How strict to be</span>
+            </div>
+            <div class="row">
+              <div>
+                <label for="cadence_target">Cadence target</label>
+                <input id="cadence_target" name="cadence_target" type="number" min="0.1" max="1" step="0.05" value="0.6">
+                <div class="field-hint">Fraction of active days you want to treat as strong cadence.</div>
+              </div>
+              <div>
+                <label for="cadence_min_days">Min active days</label>
+                <input id="cadence_min_days" name="cadence_min_days" type="number" min="1" step="1" value="5">
+                <div class="field-hint">Minimum active days before cadence is considered meaningful.</div>
+              </div>
+            </div>
+            <div class="actions" style="margin-top: 10px;">
+              <button type="button" class="secondary" id="reset-cadence">Reset cadence settings</button>
             </div>
           </div>
 
-          <div class="actions">
-            <button type="submit">Generate report</button>
-            <button type="button" class="secondary" id="fill-example">Fill example</button>
+          <div class="actions-primary">
+            <div class="actions">
+              <button type="submit">Generate report</button>
+              <button type="button" class="secondary" id="fill-example">Fill example</button>
+            </div>
           </div>
           <div class="error" id="form-error" hidden></div>
-          <div class="hint">Use either week or from/to, not both.</div>
         </form>
       </div>
 
       <div class="card output">
         <h2 class="section-title">Result</h2>
-        <div id="result-meta" class="meta">No report generated yet.</div>
+        <div id="result-meta" class="meta">Ready to generate a report.</div>
+        <div class="result-intro">
+          <div class="result-intro-top">
+            <div>
+              <p class="result-kicker">Reading view</p>
+              <h3>Evidence first, payload second.</h3>
+            </div>
+            <div class="result-rail">
+              <span class="chip">Summary-led output</span>
+              <span class="chip">Filterable PR evidence</span>
+              <span class="chip">Exportable Markdown and JSON</span>
+            </div>
+          </div>
+          <p>The detail tab is designed for a quick narrative read. Use the markdown and raw views only when you need the underlying output or want to copy it elsewhere.</p>
+        </div>
         <div class="stats" id="stats" hidden>
           <div class="stat"><div class="label">PRs opened</div><div class="value" id="stat-prs-opened">0</div></div>
           <div class="stat"><div class="label">PRs merged</div><div class="value" id="stat-prs-merged">0</div></div>
@@ -551,7 +1186,9 @@ HTML_TEMPLATE = """<!doctype html>
           <a href="#" id="download-markdown" class="button-link secondary" download="github-dev-metrics.md">Download Markdown</a>
           <a href="#" id="download-json" class="button-link secondary" download="github-dev-metrics.json">Download JSON</a>
         </div>
-        <div id="result" class="report-view">Use the form to generate a report.</div>
+        <div id="result" class="report-view">
+          <div class="empty-state">Choose a developer, scope the repositories, and generate a report to see the narrative view here.</div>
+        </div>
       </div>
     </div>
   </div>
@@ -701,47 +1338,94 @@ HTML_TEMPLATE = """<!doctype html>
       const reviewStateEntries = Object.entries(reviewStates)
         .map(([state, count]) => `${state}: ${count}`)
         .join(', ');
+      const statusLabel = pr.merged_at ? 'Merged' : pr.state === 'open' ? 'Open' : 'Closed';
+      const statusDetail = pr.merged_at ? `Merged ${escapeHtml(pr.merged_at)}` : escapeHtml(pr.state);
+      const testSummary = testFiles.length ? `${fmtNumber(testFiles.length)} file(s)` : 'No test files';
+      const noisySummary = noisyMessages.length ? `${fmtNumber(noisyMessages.length)} noisy commit(s)` : 'Clean commit trail';
+      const riskLabel = riskScore >= 4 ? 'High risk' : riskScore >= 2 ? 'Medium risk' : 'Low risk';
 
       return `
         <details class="pr-card" data-risk-score="${riskScore}" data-status="${pr.merged_at ? 'merged' : pr.state}" data-has-tests="${testFiles.length ? '1' : '0'}" data-noisy="${noisyMessages.length ? '1' : '0'}">
           <summary>
-            <div>
-              <div class="pr-title">${escapeHtml(pr.repo)}#${pr.number} ${escapeHtml(pr.title)}</div>
-              <div class="meta">${escapeHtml(pr.state)}${pr.merged_at ? ` · merged ${escapeHtml(pr.merged_at)}` : ''}</div>
+            <div class="pr-summary-top">
+              <div class="pr-summary-main">
+                <div class="pr-summary-kicker">${escapeHtml(pr.repo)} · #${pr.number}</div>
+                <div class="pr-summary-title">${escapeHtml(pr.title)}</div>
+                <div class="pr-summary-meta">
+                  <span>${escapeHtml(statusDetail)}</span>
+                  <span>Created ${escapeHtml(pr.created_at)}</span>
+                  <span>${fmtNumber(pr.changed_files)} files changed</span>
+                </div>
+              </div>
+              <div class="pill-row">
+                <span class="signal-score ${scoreClass(riskScore)}">${riskLabel}</span>
+                ${badges.join('')}
+              </div>
             </div>
-            <div class="pill-row">
-              <span class="signal-score ${scoreClass(riskScore)}">${riskScore >= 4 ? 'High risk' : riskScore >= 2 ? 'Medium risk' : 'Low risk'}</span>
-              ${badges.join('')}
+            <div class="pr-summary-stats">
+              <div class="pr-summary-stat">
+                <div class="label">Status</div>
+                <div class="value">${escapeHtml(statusLabel)}</div>
+              </div>
+              <div class="pr-summary-stat">
+                <div class="label">Tests</div>
+                <div class="value">${escapeHtml(testSummary)}</div>
+              </div>
+              <div class="pr-summary-stat">
+                <div class="label">Commit trail</div>
+                <div class="value">${escapeHtml(noisySummary)}</div>
+              </div>
             </div>
           </summary>
           <div class="pr-card-body">
-            <div class="pr-meta">
-              <div><strong>URL:</strong> <a href="${escapeHtml(pr.url)}" target="_blank" rel="noreferrer">${escapeHtml(pr.url)}</a></div>
-              <div><strong>Created:</strong> ${escapeHtml(pr.created_at)}</div>
-              <div><strong>Closed:</strong> ${escapeHtml(pr.closed_at || '-')}</div>
-              <div><strong>Merged:</strong> ${escapeHtml(pr.merged_at || '-')}</div>
-              <div><strong>Changes:</strong> +${fmtNumber(pr.additions)} / -${fmtNumber(pr.deletions)} / ${fmtNumber(pr.changed_files)} files</div>
-              <div><strong>Time to merge:</strong> ${fmtNumber(timeToMerge)} days</div>
+            <div class="pr-body-note">
+              <strong>${escapeHtml(pr.repo)}#${pr.number}</strong>
+              <span>${escapeHtml(pr.title)}</span>
             </div>
-            <div>
-              <div class="field-label">Review state</div>
-              <div>${escapeHtml(reviewStateEntries || 'No reviews found')}</div>
-            </div>
-            <div>
-              <div class="field-label">Review iterations</div>
-              <div>${fmtNumber(reviewIterations)}</div>
-            </div>
-            <div>
-              <div class="field-label">Test files</div>
-              <div>${listToHtml(testFiles, 'No obvious test files were touched.')}</div>
-            </div>
-            <div>
-              <div class="field-label">Noisy commits</div>
-              <div>${listToHtml(noisyMessages, 'No noisy commit messages detected.')}</div>
-            </div>
-            <div>
-              <div class="field-label">Risk reasons</div>
-              <div>${listToHtml(riskReasons, 'No obvious risk signals were detected.')}</div>
+            <div class="pr-evidence-grid">
+              <div class="pr-evidence-card">
+                <div class="pr-evidence-head">
+                  <h4>Timeline</h4>
+                  <div class="meta">${escapeHtml(statusLabel)}</div>
+                </div>
+                <div class="pr-meta">
+                  <div><strong>URL:</strong> <a href="${escapeHtml(pr.url)}" target="_blank" rel="noreferrer">${escapeHtml(pr.url)}</a></div>
+                  <div><strong>Created:</strong> ${escapeHtml(pr.created_at)}</div>
+                  <div><strong>Closed:</strong> ${escapeHtml(pr.closed_at || '-')}</div>
+                  <div><strong>Merged:</strong> ${escapeHtml(pr.merged_at || '-')}</div>
+                  <div><strong>Changes:</strong> +${fmtNumber(pr.additions)} / -${fmtNumber(pr.deletions)} / ${fmtNumber(pr.changed_files)} files</div>
+                  <div><strong>Time to merge:</strong> ${fmtNumber(timeToMerge)} days</div>
+                </div>
+              </div>
+              <div class="pr-evidence-card">
+                <div class="pr-evidence-head">
+                  <h4>Review</h4>
+                  <div class="meta">${fmtNumber(reviewIterations)} iteration(s)</div>
+                </div>
+                <div class="field-label">Review state</div>
+                <div>${escapeHtml(reviewStateEntries || 'No reviews found')}</div>
+              </div>
+              <div class="pr-evidence-card">
+                <div class="pr-evidence-head">
+                  <h4>Testing</h4>
+                  <div class="meta">${fmtNumber(testFiles.length)} file(s)</div>
+                </div>
+                <div>${listToHtml(testFiles, 'No obvious test files were touched.')}</div>
+              </div>
+              <div class="pr-evidence-card">
+                <div class="pr-evidence-head">
+                  <h4>Commit hygiene</h4>
+                  <div class="meta">${fmtNumber(noisyMessages.length)} noisy</div>
+                </div>
+                <div>${listToHtml(noisyMessages, 'No noisy commit messages detected.')}</div>
+              </div>
+              <div class="pr-evidence-card wide">
+                <div class="pr-evidence-head">
+                  <h4>Risk reasons</h4>
+                  <div class="meta">${fmtNumber(riskReasons.length)} signal(s)</div>
+                </div>
+                <div>${listToHtml(riskReasons, 'No obvious risk signals were detected.')}</div>
+              </div>
             </div>
           </div>
         </details>
@@ -919,6 +1603,9 @@ HTML_TEMPLATE = """<!doctype html>
             <div class="detail-section-title">
               <h3>Pull Request Evidence</h3>
             </div>
+            <div class="hint" style="margin: 0 0 12px;">
+              Search by title, repo, or PR number, then narrow the evidence to the signal you want to review.
+            </div>
             <div class="filter-bar">
               <input id="pr-filter-search" type="search" placeholder="Search PR title, repo, or number">
               <select id="pr-filter-status">
@@ -1002,15 +1689,15 @@ HTML_TEMPLATE = """<!doctype html>
 
     function renderCurrentView() {
       if (activeView === 'detail') {
-        result.innerHTML = current.detail || '<div class="empty-state">Use the form to generate a report.</div>';
+        result.innerHTML = current.detail || '<div class="empty-state">Generate a report to open the narrative view.</div>';
         attachPrFilters();
         return;
       }
       if (activeView === 'markdown') {
-        result.innerHTML = `<pre class="raw-pre">${escapeHtml(current.markdown || 'No markdown available.')}</pre>`;
+        result.innerHTML = `<pre class="raw-pre">${escapeHtml(current.markdown || 'Markdown export will appear here after a report is generated.')}</pre>`;
         return;
       }
-      result.innerHTML = `<pre class="raw-pre">${escapeHtml(current.raw || 'No JSON available.')}</pre>`;
+      result.innerHTML = `<pre class="raw-pre">${escapeHtml(current.raw || 'Raw JSON will appear here after a report is generated.')}</pre>`;
     }
 
     function setError(message, detail = '') {
@@ -1122,8 +1809,8 @@ HTML_TEMPLATE = """<!doctype html>
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
       setError('');
-      result.innerHTML = '<div class="empty-state">Generating report...</div>';
-      resultMeta.textContent = 'Working...';
+      result.innerHTML = '<div class="loading-state"><p class="loading-label">Generating</p><h3>Building the report narrative.</h3><p>Collecting GitHub activity, summarizing evidence, and shaping the output for review.</p></div>';
+      resultMeta.textContent = 'Working on the report...';
       stats.hidden = true;
 
       const payload = {
@@ -1170,8 +1857,8 @@ HTML_TEMPLATE = """<!doctype html>
           'Report generation failed.',
           'Check the repository name, date range, cadence settings, and GitHub token access. Technical detail: ' + error.message,
         );
-        resultMeta.textContent = 'No report generated.';
-        result.innerHTML = '<div class="empty-state">Use the form to generate a report.</div>';
+        resultMeta.textContent = 'No report generated yet.';
+        result.innerHTML = '<div class="empty-state">The report could not be built. Adjust the inputs and try again.</div>';
       }
     });
   </script>
