@@ -44,7 +44,7 @@ If you want to work from a repo checkout instead of a global install:
 
 ```bash
 make install
-make run ARGS="--help"
+.venv/bin/python -m github_dev_metrics.cli --help
 ```
 
 ## Environment
@@ -201,7 +201,7 @@ Recommended token types:
 ```bash
 make install
 make test
-make run ARGS="--help"
+.venv/bin/python -m github_dev_metrics.cli --help
 make ui HOST=127.0.0.1 PORT=8501
 ```
 

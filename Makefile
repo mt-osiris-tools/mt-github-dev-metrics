@@ -1,4 +1,4 @@
-.PHONY: install test run ui help
+.PHONY: install test ui
 
 HOST ?= 127.0.0.1
 PORT ?= 8501
@@ -10,17 +10,5 @@ install:
 test:
 	.venv/bin/python -m pytest -q
 
-run:
-	.venv/bin/python -m github_dev_metrics.cli $(ARGS)
-
 ui:
 	.venv/bin/python -m github_dev_metrics.web_app --host $(HOST) --port $(PORT)
-
-help:
-	@printf '%s\n' \
-		'Targets:' \
-		'  make install  Create .venv and install the package plus test dependencies' \
-		'  make test     Run the test suite from .venv' \
-		'  make run      Run the CLI, pass arguments with ARGS="..."' \
-		'  make ui       Start the local web UI, override HOST and PORT as needed' \
-		'  make help     Show this help'
