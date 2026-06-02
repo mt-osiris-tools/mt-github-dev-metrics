@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "github-dev-metrics"
 version = "0.1.0"
-description = "Collect GitHub developer activity metrics for review and growth conversations."
+description = "Collect GitHub developer activity metrics for reports and engineering reviews."
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [

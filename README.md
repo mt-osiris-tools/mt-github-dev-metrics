@@ -1,6 +1,6 @@
 # github-dev-metrics
 
-`github-dev-metrics` is a Python CLI for collecting GitHub activity metrics for a specific developer across one or more repositories. It is intended for performance reviews, onboarding reviews, growth plans, and manager 1:1 preparation.
+`github-dev-metrics` is a Python CLI for collecting GitHub activity metrics for a specific developer across one or more repositories. It is intended for developer activity reviews, team health conversations, and engineering retrospectives.
 
 ## Requirements
 
@@ -24,12 +24,12 @@ github-dev-metrics --help
 
 ```bash
 github-dev-metrics \
-  --developer alan-guerrero \
-  --org my-org \
+  --developer octocat \
+  --org example-org \
   --repos frontend-app,design-system \
   --week 2026-W18 \
   --format markdown \
-  --output reports/alan-github-metrics.md
+  --output reports/octocat-github-metrics.md
 ```
 
 Update an existing global install:
@@ -69,40 +69,44 @@ If you use `direnv`, you can let it load the token automatically when you enter 
 direnv allow
 ```
 
-The included `.envrc` will load `.env` if present.
+Copy `.envrc.example` to `.envrc` if you want a local `direnv` file:
+
+```bash
+cp .envrc.example .envrc
+```
 
 ## CLI Usage
 
 ```bash
 github-dev-metrics \
-  --developer alan-guerrero \
-  --org my-org \
+  --developer octocat \
+  --org example-org \
   --repos frontend-app,design-system \
   --from 2026-03-01 \
   --to 2026-05-31 \
   --format markdown \
-  --output reports/alan-github-metrics.md
+  --output reports/octocat-github-metrics.md
 ```
 
 You can also use an ISO week shortcut:
 
 ```bash
 github-dev-metrics \
-  --developer alan-guerrero \
-  --org my-org \
+  --developer octocat \
+  --org example-org \
   --repos frontend-app,design-system \
   --week 2026-W18 \
   --format markdown \
-  --output reports/alan-github-metrics.md
+  --output reports/octocat-github-metrics.md
 ```
 
 The commit cadence signal is configurable:
 
 ```bash
 github-dev-metrics \
-  --developer alan-guerrero \
-  --org MedTrainer365 \
-  --repos medtrainer-react \
+  --developer octocat \
+  --org example-org \
+  --repos frontend-app \
   --week 2026-W18 \
   --cadence-target 0.7 \
   --cadence-min-days 4 \
@@ -111,12 +115,12 @@ github-dev-metrics \
 
 ```bash
 github-dev-metrics \
-  --developer alan-guerrero \
-  --repos my-org/frontend-app,my-org/design-system \
+  --developer octocat \
+  --repos example-org/frontend-app,example-org/design-system \
   --from 2026-03-01 \
   --to 2026-05-31 \
   --format json \
-  --output reports/alan-github-metrics.json
+  --output reports/octocat-github-metrics.json
 ```
 
 If `--output` is omitted, the report is written to stdout.
@@ -175,7 +179,7 @@ Report interpretation:
 - Testing evidence
 - Git hygiene evidence
 - Review participation evidence
-- Suggested follow-up questions for a 1:1
+- Suggested follow-up questions for a review conversation
 
 ## GitHub Token Permissions
 
@@ -193,7 +197,7 @@ Recommended token types:
 - The tool detects test files using filename patterns only; it does not understand test semantics.
 - “Long time-to-merge” is currently flagged at more than 7 days from PR creation to merge.
 - The built-in `.env` loader is intentionally small and supports simple `KEY=VALUE` lines.
-- If you use `direnv`, you must run `direnv allow` once after cloning or changing `.envrc`.
+- If you use `direnv`, you must run `direnv allow` once after creating or changing `.envrc`.
 - `--week` expects ISO week format `YYYY-Www`.
 
 ## Running Tests

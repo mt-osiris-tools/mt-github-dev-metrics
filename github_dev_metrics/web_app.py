@@ -387,15 +387,15 @@ HTML_TEMPLATE = """<!doctype html>
             <div class="row">
               <div>
                 <label for="developer">Developer</label>
-                <input id="developer" name="developer" placeholder="alan-guerrero" required>
+                <input id="developer" name="developer" placeholder="octocat" required>
               </div>
               <div>
                 <label for="org">Organization</label>
-                <input id="org" name="org" placeholder="MedTrainer365">
+                <input id="org" name="org" placeholder="example-org">
               </div>
               <div style="grid-column: 1 / -1;">
                 <label for="repos">Repositories</label>
-                <textarea id="repos" name="repos" placeholder="medtrainer-react,design-system or MedTrainer365/medtrainer-react" required></textarea>
+                <textarea id="repos" name="repos" placeholder="frontend-app,design-system or example-org/frontend-app" required></textarea>
                 <div class="field-hint">Comma-separated repositories. If you only enter repo names, the organization field is used as the owner.</div>
               </div>
             </div>

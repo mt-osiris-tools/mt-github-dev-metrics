@@ -18,7 +18,7 @@ class FakeGithubClient:
     def get_pull(self, repo, number: int):
         return {
             "title": "Add onboarding banner",
-            "html_url": "https://github.com/MedTrainer365/medtrainer-react/pull/42",
+            "html_url": "https://github.com/example-org/frontend-app/pull/42",
             "state": "closed",
             "created_at": "2026-05-01T10:00:00Z",
             "merged_at": "2026-05-02T12:00:00Z",
@@ -36,7 +36,7 @@ class FakeGithubClient:
             {
                 "sha": "abc",
                 "commit": {"message": "Implement feature", "author": {"date": "2026-05-01T10:00:00Z"}},
-                "html_url": "https://github.com/MedTrainer365/medtrainer-react/commit/abc",
+                "html_url": "https://github.com/example-org/frontend-app/commit/abc",
             }
         ]
 
@@ -51,27 +51,27 @@ class FakeGithubClient:
             {
                 "sha": "abc1",
                 "commit": {"message": "WIP update banner", "author": {"date": "2026-04-27T10:00:00Z"}},
-                "html_url": "https://github.com/MedTrainer365/medtrainer-react/commit/abc1",
+                "html_url": "https://github.com/example-org/frontend-app/commit/abc1",
             },
             {
                 "sha": "abc2",
                 "commit": {"message": "Fix banner copy", "author": {"date": "2026-04-28T10:00:00Z"}},
-                "html_url": "https://github.com/MedTrainer365/medtrainer-react/commit/abc2",
+                "html_url": "https://github.com/example-org/frontend-app/commit/abc2",
             },
             {
                 "sha": "abc3",
                 "commit": {"message": "WIP refine header", "author": {"date": "2026-04-30T10:00:00Z"}},
-                "html_url": "https://github.com/MedTrainer365/medtrainer-react/commit/abc3",
+                "html_url": "https://github.com/example-org/frontend-app/commit/abc3",
             },
             {
                 "sha": "abc4",
                 "commit": {"message": "Final polish", "author": {"date": "2026-05-01T10:00:00Z"}},
-                "html_url": "https://github.com/MedTrainer365/medtrainer-react/commit/abc4",
+                "html_url": "https://github.com/example-org/frontend-app/commit/abc4",
             },
             {
                 "sha": "abc5",
                 "commit": {"message": "Tweak layout", "author": {"date": "2026-05-02T10:00:00Z"}},
-                "html_url": "https://github.com/MedTrainer365/medtrainer-react/commit/abc5",
+                "html_url": "https://github.com/example-org/frontend-app/commit/abc5",
             }
         ]
 
@@ -90,8 +90,8 @@ def test_build_report_payload_returns_renderable_report() -> None:
     payload = build_report_payload(
         {
             "developer": "alan",
-            "org": "MedTrainer365",
-            "repos": "medtrainer-react",
+            "org": "example-org",
+            "repos": "frontend-app",
             "week": "2026-W18",
             "cadence_target": "0.7",
             "cadence_min_days": "4",
