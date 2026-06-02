@@ -2,10 +2,49 @@
 
 `github-dev-metrics` is a Python CLI for collecting GitHub activity metrics for a specific developer across one or more repositories. It is intended for performance reviews, onboarding reviews, growth plans, and manager 1:1 preparation.
 
-## Installation
+## Requirements
+
+- `python3` 3.11 or newer
+- `git`
+- `curl` for the one-line install and update flow
+
+## Global Install
 
 ```bash
-pip install -e .
+curl -fsSL https://raw.githubusercontent.com/mt-osiris-tools/mt-github-dev-metrics/main/scripts/install.sh | bash
+```
+
+Then run the CLI directly:
+
+```bash
+github-dev-metrics --help
+```
+
+## Quick Start
+
+```bash
+github-dev-metrics \
+  --developer alan-guerrero \
+  --org my-org \
+  --repos frontend-app,design-system \
+  --week 2026-W18 \
+  --format markdown \
+  --output reports/alan-github-metrics.md
+```
+
+Update an existing global install:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/mt-osiris-tools/mt-github-dev-metrics/main/scripts/install.sh | bash -s -- --update
+```
+
+## Local Checkout
+
+If you want to work from a repo checkout instead of a global install:
+
+```bash
+make install
+make run ARGS="--help"
 ```
 
 ## Environment
@@ -158,12 +197,6 @@ Recommended token types:
 - `--week` expects ISO week format `YYYY-Www`.
 
 ## Running Tests
-
-```bash
-python -m pytest
-```
-
-If you prefer a single command flow:
 
 ```bash
 make install

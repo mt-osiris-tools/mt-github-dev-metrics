@@ -5,8 +5,7 @@ PORT ?= 8501
 
 install:
 	python3 -m venv .venv
-	.venv/bin/pip install -e .
-	.venv/bin/pip install pytest
+	.venv/bin/python scripts/bootstrap_venv.py --project-root . --with dev
 
 test:
 	.venv/bin/python -m pytest -q

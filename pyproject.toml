@@ -12,6 +12,11 @@ dependencies = [
   "requests>=2.31.0",
 ]
 
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0.0",
+]
+
 [project.scripts]
 github-dev-metrics = "github_dev_metrics.cli:main"
 
@@ -20,4 +25,3 @@ include-package-data = true
 
 [tool.setuptools.packages.find]
 include = ["github_dev_metrics*"]
-
