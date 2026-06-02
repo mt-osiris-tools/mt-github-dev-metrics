@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
-from typing import Any, Iterable
+from typing import Any, Callable, Iterable
 
 from .github_client import GithubClient, GithubError, GithubAPIError
 from .models import (
@@ -184,6 +184,7 @@ def collect_metrics(
     repos: list[str],
     date_from: datetime,
     date_to: datetime,
+    progress: Callable[[str], None] | None = None,
 ) -> DeveloperMetrics:
     repo_refs = normalize_repo_specs(repos, org)
     pr_records: list[PullRequestRecord] = []
@@ -191,7 +192,9 @@ def collect_metrics(
     review_participation: list[ReviewParticipationRecord] = []
     limitations: list[str] = []
 
-    for repo in repo_refs:
+    for index, repo in enumerate(repo_refs, start=1):
+        if progress is not None:
+            progress(f"Collecting {repo.full_name} ({index}/{len(repo_refs)})...")
         pulls = client.list_repo_pulls(repo, state="all")
         for pull in pulls:
             author = str(pull.get("user", {}).get("login", ""))

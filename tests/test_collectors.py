@@ -149,6 +149,50 @@ def test_collect_metrics_builds_records() -> None:
     assert metrics.commits[0].message == "Implement feature"
 
 
+def test_collect_metrics_reports_repo_progress_in_order() -> None:
+    client = FakeGithubClient(
+        {
+            "pulls:my-org/frontend-app": [],
+            "commits:my-org/frontend-app": [
+                {
+                    "sha": "abc",
+                    "commit": {"message": "Implement feature", "author": {"date": "2026-03-10T10:00:00Z"}},
+                    "html_url": "https://github.com/my-org/frontend-app/commit/abc",
+                }
+            ],
+            "pulls:my-org/design-system": [],
+            "commits:my-org/design-system": [
+                {
+                    "sha": "def",
+                    "commit": {"message": "Update tokens", "author": {"date": "2026-03-11T10:00:00Z"}},
+                    "html_url": "https://github.com/my-org/design-system/commit/def",
+                }
+            ],
+            "search": [],
+        }
+    )
+    progress_messages: list[str] = []
+
+    metrics = collect_metrics(
+        client,  # type: ignore[arg-type]
+        "alan",
+        "my-org",
+        ["frontend-app", "design-system"],
+        datetime(2026, 3, 1, tzinfo=timezone.utc),
+        datetime(2026, 5, 31, tzinfo=timezone.utc),
+        progress=progress_messages.append,
+    )
+
+    assert [record.repo for record in metrics.commits] == [
+        "my-org/frontend-app",
+        "my-org/design-system",
+    ]
+    assert progress_messages == [
+        "Collecting my-org/frontend-app (1/2)...",
+        "Collecting my-org/design-system (2/2)...",
+    ]
+
+
 def test_load_local_env_file_reads_dotenv(tmp_path, monkeypatch) -> None:
     env_file = tmp_path / ".env"
     env_file.write_text("GITHUB_TOKEN=from-dotenv\nexport EXTRA_VALUE='hello'\n", encoding="utf-8")

@@ -21,6 +21,11 @@ from .report_json import render_json_report
 from .report_markdown import render_markdown_report
 
 
+def _emit_progress(message: str) -> None:
+    sys.stderr.write(f"{message}\n")
+    sys.stderr.flush()
+
+
 def _run_git_command(args: list[str], cwd: Path | None = None) -> str:
     completed = subprocess.run(
         ["git", *args],
@@ -228,6 +233,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     try:
+        _emit_progress("Resolving repositories and GitHub client...")
         _load_local_env_file()
         if args.week:
             if args.date_from or args.date_to:
@@ -246,12 +252,23 @@ def main(argv: list[str] | None = None) -> int:
             raise ValueError("--cadence-min-days must be at least 1.")
         repos = _resolve_repos(args.repos, args.org)
         client = GithubClient.from_env()
-        metrics = collect_metrics(client, args.developer, args.org, repos, date_from, date_to)
+        _emit_progress("Collecting GitHub activity...")
+        metrics = collect_metrics(
+            client,
+            args.developer,
+            args.org,
+            repos,
+            date_from,
+            date_to,
+            progress=_emit_progress,
+        )
+        _emit_progress("Calculating metrics...")
         calculated = calculate_metrics(
             metrics,
             cadence_target=args.cadence_target,
             cadence_min_active_days=args.cadence_min_days,
         )
+        _emit_progress(f"Rendering {args.format} report...")
         if args.format == "markdown":
             report = render_markdown_report(calculated)
         else:
@@ -264,6 +281,7 @@ def main(argv: list[str] | None = None) -> int:
             date_to,
             week=args.week,
         )
+        _emit_progress(f"Writing report to {output_path}...")
         written_path = _write_output(report, output_path)
         sys.stdout.write(f"Wrote {written_path}\n")
         return 0
