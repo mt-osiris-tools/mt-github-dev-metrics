@@ -1,0 +1,112 @@
+{
+  "/home/james/Documents/medtrainer/tools/mt-github-dev-metrics/tests/test_collectors.py": {
+    "mtime": 1778608234.257986,
+    "ast_hash": "9a6e5b05111abd4afa48946cf3ab0931",
+    "semantic_hash": ""
+  },
+  "/home/james/Documents/medtrainer/tools/mt-github-dev-metrics/tests/test_web_app.py": {
+    "mtime": 1778612796.2587993,
+    "ast_hash": "b045009aa5418983717df382aeaaea29",
+    "semantic_hash": ""
+  },
+  "/home/james/Documents/medtrainer/tools/mt-github-dev-metrics/tests/test_report_markdown.py": {
+    "mtime": 1778612391.2367709,
+    "ast_hash": "67e8338bc5866d9f65957b5ae1ae8c3f",
+    "semantic_hash": ""
+  },
+  "/home/james/Documents/medtrainer/tools/mt-github-dev-metrics/tests/test_metrics.py": {
+    "mtime": 1778612510.4647536,
+    "ast_hash": "e59e3d8b4eebd7654b183a53faeaaa0d",
+    "semantic_hash": ""
+  },
+  "/home/james/Documents/medtrainer/tools/mt-github-dev-metrics/github_dev_metrics/cli.py": {
+    "mtime": 1778612472.843067,
+    "ast_hash": "60a57d9beddf52b3140a2a2d68ce23a8",
+    "semantic_hash": ""
+  },
+  "/home/james/Documents/medtrainer/tools/mt-github-dev-metrics/github_dev_metrics/collectors.py": {
+    "mtime": 1778608234.2574763,
+    "ast_hash": "d5180afd4aad675aa2ce3876df02c88c",
+    "semantic_hash": ""
+  },
+  "/home/james/Documents/medtrainer/tools/mt-github-dev-metrics/github_dev_metrics/github_client.py": {
+    "mtime": 1778608234.2575395,
+    "ast_hash": "da81994ec6fcfe08f7ecfb9bad31124c",
+    "semantic_hash": ""
+  },
+  "/home/james/Documents/medtrainer/tools/mt-github-dev-metrics/github_dev_metrics/models.py": {
+    "mtime": 1778608234.2576513,
+    "ast_hash": "b220176df6032e568466c70c207355a1",
+    "semantic_hash": ""
+  },
+  "/home/james/Documents/medtrainer/tools/mt-github-dev-metrics/github_dev_metrics/__main__.py": {
+    "mtime": 1778608234.2573483,
+    "ast_hash": "a9ac06bff36fd0e55ff48ef568fa3277",
+    "semantic_hash": ""
+  },
+  "/home/james/Documents/medtrainer/tools/mt-github-dev-metrics/github_dev_metrics/web_app.py": {
+    "mtime": 1780361227.921503,
+    "ast_hash": "abb77b62ddff1f4fb261cffe4314f457",
+    "semantic_hash": ""
+  },
+  "/home/james/Documents/medtrainer/tools/mt-github-dev-metrics/github_dev_metrics/report_json.py": {
+    "mtime": 1778608234.257687,
+    "ast_hash": "95e11706285629e3c9d175382118f856",
+    "semantic_hash": ""
+  },
+  "/home/james/Documents/medtrainer/tools/mt-github-dev-metrics/github_dev_metrics/metrics.py": {
+    "mtime": 1778612488.6757834,
+    "ast_hash": "21a8516259f2218d37e444323b25c5e5",
+    "semantic_hash": ""
+  },
+  "/home/james/Documents/medtrainer/tools/mt-github-dev-metrics/github_dev_metrics/__init__.py": {
+    "mtime": 1778608234.2573159,
+    "ast_hash": "7709283f3f2d63a64ec85cd8d78027c7",
+    "semantic_hash": ""
+  },
+  "/home/james/Documents/medtrainer/tools/mt-github-dev-metrics/github_dev_metrics/report_markdown.py": {
+    "mtime": 1778612330.9635668,
+    "ast_hash": "0afaf835be2941def423215acb16525d",
+    "semantic_hash": ""
+  },
+  "/home/james/Documents/medtrainer/tools/mt-github-dev-metrics/requirements.txt": {
+    "mtime": 1778608234.2579248,
+    "ast_hash": "b8041ef76a8e084921e24e41ac401c44",
+    "semantic_hash": ""
+  },
+  "/home/james/Documents/medtrainer/tools/mt-github-dev-metrics/README.md": {
+    "mtime": 1778612515.0405731,
+    "ast_hash": "70b864b924972ef24696ae73cda09208",
+    "semantic_hash": ""
+  },
+  "/home/james/Documents/medtrainer/tools/mt-github-dev-metrics/AGENTS.md": {
+    "mtime": 1778877193.696019,
+    "ast_hash": "8ee39dcfe68a23b3797b02648930d699",
+    "semantic_hash": ""
+  },
+  "/home/james/Documents/medtrainer/tools/mt-github-dev-metrics/reports/alan-github-metrics.md": {
+    "mtime": 1778607142.9899466,
+    "ast_hash": "9eb32ea5b1b63be487ec1d7a6fdfed9d",
+    "semantic_hash": ""
+  },
+  "/home/james/Documents/medtrainer/tools/mt-github-dev-metrics/reports/w19-odette-github-metrics.md": {
+    "mtime": 1778607587.5265684,
+    "ast_hash": "01790cd8c2f98424352478625b5954da",
+    "semantic_hash": ""
+  },
+  "/home/james/Documents/medtrainer/tools/mt-github-dev-metrics/.codex/hooks.json": {
+    "mtime": 1778877193.6962955,
+    "ast_hash": "005ac71c84af2cae38e255e2b9de2411",
+    "semantic_hash": ""
+  },
+  "/home/james/Documents/medtrainer/tools/mt-github-dev-metrics/.agents/workflows/graphify.md": {
+    "mtime": 1778876294.4420862,
+    "ast_hash": "704a84dd434a7f217f5b3714a4a7ad05",
+    "semantic_hash": ""
+  },
+  "/home/james/Documents/medtrainer/tools/mt-github-dev-metrics/.agents/rules/graphify.md": {
+    "mtime": 1778876294.4417644,
+    "ast_hash": "a0ba2b649968c416a1f2ac2f40e4907d",
+    "semantic_hash": ""
+  }
+}

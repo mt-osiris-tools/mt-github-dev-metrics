@@ -31,20 +31,20 @@ HTML_TEMPLATE = """<!doctype html>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;800&display=swap" rel="stylesheet">
   <style>
     :root {
-      color-scheme: dark;
-      --bg: #09090b;
-      --bg-soft: #18181b;
-      --panel: rgba(24, 24, 27, 0.7);
-      --panel-solid: #18181b;
-      --text: #f4f4f5;
-      --muted: #a1a1aa;
-      --border: rgba(255, 255, 255, 0.1);
-      --border-strong: rgba(255, 255, 255, 0.15);
-      --accent: #2dd4bf;
-      --accent-dark: #14b8a6;
-      --accent-alt: #8b5cf6;
-      --shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
-      --shadow-soft: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+      color-scheme: light;
+      --bg: #fdfdfd;
+      --bg-soft: #f4f4f5;
+      --panel: rgba(255, 255, 255, 0.75);
+      --panel-solid: #ffffff;
+      --text: #18181b;
+      --muted: #71717a;
+      --border: rgba(0, 0, 0, 0.08);
+      --border-strong: rgba(0, 0, 0, 0.15);
+      --accent: #09090b;
+      --accent-dark: #000000;
+      --accent-alt: #3f3f46;
+      --shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.08);
+      --shadow-soft: 0 4px 14px rgba(0, 0, 0, 0.03);
       --danger: #ef4444;
       --danger-dark: #b91c1c;
       --good: #10b981;
@@ -53,680 +53,330 @@ HTML_TEMPLATE = """<!doctype html>
       --warn-bg: rgba(245, 158, 11, 0.1);
       --info: #3b82f6;
       --info-bg: rgba(59, 130, 246, 0.1);
+      --radius: 16px;
     }
     * { box-sizing: border-box; }
     body {
       margin: 0;
       font-family: 'Inter', system-ui, sans-serif;
-      background:
-        radial-gradient(circle at 15% 50%, rgba(45, 212, 191, 0.1), transparent 25%),
-        radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.1), transparent 25%),
-        var(--bg);
+      background: var(--bg);
+      background-image: 
+        radial-gradient(at 0% 0%, hsla(210, 100%, 97%, 1) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, hsla(250, 100%, 97%, 1) 0px, transparent 50%);
       background-attachment: fixed;
       color: var(--text);
-      line-height: 1.5;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
     }
     h1, h2, h3, h4, h5, .section-title, .detail-header h2, .detail-section-title h3, .toc-card h3, .comparison-panel h4, .bar-label, .value {
       font-family: 'Outfit', sans-serif;
+      font-weight: 600;
+      color: var(--accent);
     }
+    a { color: var(--info); text-decoration: none; transition: 0.2s; }
+    a:hover { color: var(--info); opacity: 0.8; }
     .wrap {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 36px 20px 56px;
+      width: 100%; max-width: 1400px; margin: 0 auto; padding: 32px;
     }
-    .hero {
-      display: grid;
-      gap: 18px;
-      grid-template-columns: 1.35fr 0.75fr;
-      align-items: stretch;
-      margin-bottom: 24px;
-    }
-    .card {
+    .hero { display: grid; gap: 24px; grid-template-columns: 1.5fr 1fr; align-items: stretch; margin-bottom: 32px; }
+    .card, .detail-card, .summary-box, .pr-card, .pr-overview-card, .bar-card, .comparison-panel, .dashboard-panel, .dashboard-kpi, .dashboard-signal, .empty-state, .loading-state {
       background: var(--panel);
       backdrop-filter: blur(24px);
       -webkit-backdrop-filter: blur(24px);
       border: 1px solid var(--border);
-      border-radius: 24px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-soft);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .card:hover, .pr-card:hover, .bar-card:hover, .comparison-panel:hover {
       box-shadow: var(--shadow);
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-    .card:hover {
-      box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.8);
-    }
-    .hero-copy {
-      padding: 32px;
-      position: relative;
-      overflow: hidden;
-    }
-    .hero-copy::before, .form-shell::before {
-      content: '';
-      position: absolute;
-      inset: 0 0 auto 0;
-      height: 4px;
-      background: linear-gradient(90deg, var(--accent), var(--accent-alt));
-    }
-    .hero-copy::after {
-      content: '';
-      position: absolute;
-      inset: auto -80px -120px auto;
-      width: 260px;
-      height: 260px;
-      background: radial-gradient(circle, rgba(45, 212, 191, 0.2), transparent 70%);
-      pointer-events: none;
+      border-color: var(--border-strong);
+      transform: translateY(-2px);
     }
     .eyebrow {
-      text-transform: uppercase;
-      letter-spacing: 0.15em;
-      color: var(--accent);
-      font-size: 12px;
-      font-weight: 800;
-      font-family: 'Outfit', sans-serif;
+      text-transform: uppercase; letter-spacing: 0.15em; color: var(--muted);
+      font-size: 11px; font-weight: 700; margin-bottom: 8px; display: block;
     }
-    h1 {
-      margin: 12px 0;
-      font-size: clamp(2.2rem, 4vw, 3.5rem);
-      line-height: 1;
-      letter-spacing: -0.02em;
+    h1 { margin: 0 0 16px; font-size: 2.5rem; line-height: 1.1; letter-spacing: -0.03em; }
+    .admin-header {
+      display: flex; flex-wrap: wrap; justify-content: space-between; gap: 24px; align-items: center;
+      padding: 32px 40px; margin-bottom: 32px; background: var(--panel-solid);
     }
-    .lede {
-      margin: 0;
-      color: var(--muted);
-      font-size: 1.05rem;
-      max-width: 60ch;
+    .admin-header-copy p { margin: 0; color: var(--muted); font-size: 1.1rem; max-width: 60ch; }
+    .admin-header-actions { display: flex; flex-direction: column; gap: 16px; align-items: flex-end; }
+    .meta, .hint, .subtext { color: var(--muted); }
+    .dashboard-tag, .form-kicker {
+      display: inline-flex; align-items: center; gap: 8px; width: fit-content;
+      padding: 6px 10px; border-radius: 999px; background: var(--bg-soft);
+      color: var(--muted); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
     }
-    .hero-badges {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 20px;
+    .command-palette {
+      display: flex; flex-direction: column; gap: 8px; width: 300px;
     }
-    .hero-badges .chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 14px;
-      border-radius: 999px;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid var(--border);
-      color: var(--text);
-      font-size: 13px;
-      font-weight: 600;
-      box-shadow: var(--shadow-soft);
-      transition: all 0.2s ease;
+    .command-palette .command-label { font-size: 11px; text-transform: uppercase; font-weight: 700; color: var(--muted); }
+    .command-palette input { width: 100%; border-radius: 8px; padding: 10px 14px; border: 1px solid var(--border); background: var(--bg-soft); }
+    .admin-pills { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+    .admin-pill {
+      display: inline-flex; align-items: center; padding: 6px 12px; border-radius: 20px;
+      background: var(--bg-soft); color: var(--muted); font-size: 12px; font-weight: 600;
     }
-    .hero-badges .chip:hover {
-      background: rgba(255, 255, 255, 0.1);
-      transform: translateY(-2px);
+    .app-shell { display: grid; grid-template-columns: 380px 1fr; gap: 32px; align-items: start; }
+    .scope-guide { padding: 32px; }
+    .scope-guide h2 { margin: 16px 0; font-size: 20px; }
+    .scope-guide p { color: var(--muted); margin-bottom: 24px; }
+    .scope-guide-list { list-style: none; padding: 0; display: grid; gap: 12px; margin-bottom: 24px; }
+    .scope-guide-list li {
+      position: relative; padding-left: 20px; color: var(--muted); font-size: 14px;
     }
-    .hero-note {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      margin-top: 20px;
-      padding: 10px 16px;
-      border-radius: 999px;
-      border: 1px solid rgba(45, 212, 191, 0.2);
-      background: rgba(45, 212, 191, 0.05);
-      color: var(--accent);
-      font-size: 13px;
-      font-weight: 600;
+    .scope-guide-list li::before {
+      content: ''; position: absolute; left: 0; top: 8px; width: 6px; height: 6px; border-radius: 50%; background: var(--accent);
     }
-    .hero-meta {
-      display: grid;
-      gap: 16px;
-      padding: 32px;
-      background: linear-gradient(135deg, rgba(20, 184, 166, 0.1), rgba(139, 92, 246, 0.1));
-      border: 1px solid var(--border);
-      position: relative;
+    .scope-guide-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .badge {
+      display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 12px;
+      font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
     }
-    .hero-meta .meta-title {
-      margin: 0;
-      font-size: 14px;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: var(--accent);
-      font-weight: 800;
-      font-family: 'Outfit', sans-serif;
+    .badge.info { background: var(--info-bg); color: var(--info); }
+    .badge.neutral { background: var(--bg-soft); color: var(--muted); }
+    .badge.good { background: var(--good-bg); color: var(--good); }
+    .badge.warn { background: var(--warn-bg); color: var(--warn); }
+    .badge.risk, .badge.danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); }
+    .form-shell { padding: 32px; }
+    .form-intro { margin-bottom: 32px; }
+    .form-intro h2 { font-size: 24px; margin: 8px 0; }
+    .form-intro p { color: var(--muted); margin: 0 0 24px 0; }
+    .scope-command {
+      background: var(--bg-soft); border: 1px solid var(--border); border-radius: 12px; padding: 20px; display: grid; gap: 16px;
     }
-    .hero-meta .meta-copy {
-      margin: 0;
-      font-size: 15px;
-      line-height: 1.6;
-      color: var(--text);
+    .scope-command-head h3 { margin: 0 0 4px; font-size: 16px; }
+    .scope-command-head p { margin: 0; font-size: 13px; color: var(--muted); }
+    .scope-command-code code {
+      display: block; font-family: monospace; font-size: 12px; background: var(--panel-solid);
+      padding: 16px; border-radius: 8px; border: 1px solid var(--border); white-space: pre-wrap;
     }
-    .hero-meta .chip {
-      display: inline-flex; width: fit-content; align-items: center; gap: 8px;
-      background: rgba(0,0,0,0.2); border: 1px solid var(--border);
-      padding: 8px 12px; border-radius: 999px; font-size: 13px; font-weight: 600;
-    }
-    .page-bridge {
-      display: grid;
-      grid-template-columns: 1fr auto 1fr;
-      gap: 16px;
-      align-items: center;
-      margin: 32px 0;
-    }
-    .page-bridge::before,
-    .page-bridge::after {
-      content: '';
-      height: 1px;
-      background: linear-gradient(90deg, transparent, var(--border-strong), transparent);
-    }
-    .page-bridge span {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 16px;
-      border-radius: 999px;
-      background: var(--bg-soft);
-      border: 1px solid var(--border);
-      color: var(--muted);
-      font-size: 13px;
-      font-weight: 600;
-      letter-spacing: 0.05em;
-    }
-    .grid {
-      display: grid;
-      grid-template-columns: 380px 1fr;
-      gap: 24px;
-      align-items: start;
-    }
-    .form-shell {
-      position: sticky;
-      top: 24px;
-      align-self: start;
-      overflow: hidden;
-    }
-    form {
-      padding: 24px;
-      margin-top: 5px;
-    }
-    .form-intro {
-      display: grid;
-      gap: 10px;
-      margin-bottom: 24px;
-      padding: 20px;
-      border-radius: 16px;
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid var(--border);
-    }
-    .form-kicker {
-      margin: 0;
-      text-transform: uppercase;
-      letter-spacing: 0.15em;
-      font-size: 12px;
-      font-weight: 800;
-      color: var(--accent);
-      font-family: 'Outfit', sans-serif;
-    }
-    .form-intro h2 {
-      margin: 0;
-      font-size: 22px;
-      line-height: 1.2;
-    }
-    .form-intro p {
-      margin: 0;
-      color: var(--muted);
-      font-size: 14px;
-    }
-    .section-title {
-      margin: 0 0 16px;
-      font-size: 20px;
-    }
-    .form-section {
-      margin-top: 24px;
-      padding-top: 24px;
-      border-top: 1px solid var(--border);
-    }
-    .form-section:first-of-type { margin-top: 0; padding-top: 0; border-top: 0; }
-    .form-section-title {
-      display: flex;
-      justify-content: space-between;
-      gap: 12px;
-      align-items: baseline;
-      margin-bottom: 16px;
-    }
-    .form-section-title h3 {
-      margin: 0;
-      font-size: 14px;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: var(--text);
-    }
+    .scope-command-actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .form-section { border-top: 1px solid var(--border); padding-top: 32px; margin-top: 32px; }
+    .form-section:first-child { border-top: none; padding-top: 0; margin-top: 0; }
+    .form-section-title { margin-bottom: 24px; }
+    .form-section-title h3 { margin: 0 0 4px; font-size: 16px; text-transform: uppercase; letter-spacing: 0.05em; }
     .form-section-title span { color: var(--muted); font-size: 13px; }
-    label {
-      display: block;
-      margin: 16px 0 8px;
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--muted);
-    }
+    .row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
+    .stack { display: grid; gap: 20px; }
+    label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 8px; color: var(--text); }
     input, select, textarea {
-      width: 100%;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 12px 16px;
-      font: inherit;
-      background: rgba(0, 0, 0, 0.2);
-      color: var(--text);
-      transition: all 0.2s ease;
+      width: 100%; padding: 12px 16px; border-radius: 10px; border: 1px solid var(--border);
+      background: var(--panel-solid); color: var(--text); font-family: inherit; font-size: 14px;
+      transition: 0.2s; box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);
     }
     input:focus, select:focus, textarea:focus {
-      outline: none;
-      border-color: var(--accent);
-      background: rgba(0, 0, 0, 0.4);
-      box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.15);
+      outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,0,0,0.05);
     }
     textarea { min-height: 100px; resize: vertical; }
-    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    .stack { display: grid; gap: 16px; }
-    .field-hint {
-      margin-top: 8px;
-      color: var(--muted);
-      font-size: 12px;
-    }
-    .actions {
-      display: flex;
-      gap: 12px;
-      margin-top: 24px;
-      flex-wrap: wrap;
-    }
-    .actions-primary {
-      margin-top: 24px;
-      padding-top: 24px;
-      border-top: 1px solid var(--border);
-    }
+    .field-hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
     button, .button-link {
-      appearance: none;
-      border: 1px solid transparent;
-      border-radius: 12px;
-      padding: 12px 20px;
-      font-family: 'Outfit', sans-serif;
-      font-weight: 600;
-      font-size: 15px;
-      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
-      color: #000;
-      cursor: pointer;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 4px 14px rgba(45, 212, 191, 0.3);
-      transition: all 0.2s ease;
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: 12px 24px; border-radius: 10px; font-weight: 600; font-size: 14px;
+      border: none; cursor: pointer; transition: 0.2s;
+      background: var(--accent); color: #fff; text-decoration: none;
     }
-    button:hover, .button-link:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(45, 212, 191, 0.4);
-    }
-    button:active, .button-link:active {
-      transform: translateY(0);
-    }
+    button:hover:not(:disabled), .button-link:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); opacity: 0.9; }
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
+    input:disabled, select:disabled, textarea:disabled { opacity: 0.7; cursor: not-allowed; background-color: var(--bg-soft); }
     button.secondary, .button-link.secondary {
-      background: rgba(255, 255, 255, 0.05);
-      color: var(--text);
-      border: 1px solid var(--border);
-      box-shadow: none;
+      background: var(--panel-solid); color: var(--text); border: 1px solid var(--border); box-shadow: var(--shadow-soft);
     }
-    button.secondary:hover, .button-link.secondary:hover {
-      background: rgba(255, 255, 255, 0.1);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    button.secondary:hover, .button-link.secondary:hover { background: var(--bg-soft); color: var(--accent); }
+    .actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 24px; }
+    .actions-primary { margin-top: 32px; padding-top: 32px; border-top: 1px solid var(--border); }
+    .sidebar-column { position: sticky; top: 32px; display: grid; gap: 24px; max-height: calc(100vh - 64px); overflow-y: auto; padding-right: 8px; }
+    .sidebar-nav { padding: 24px; display: grid; gap: 24px; }
+    .sidebar-brand h2 { margin: 0 0 4px; font-size: 18px; }
+    .sidebar-brand p { margin: 0; font-size: 13px; color: var(--muted); }
+    .sidebar-badge { display: inline-block; margin-top: 12px; font-size: 11px; padding: 4px 8px; background: var(--good-bg); color: var(--good); border-radius: 12px; font-weight: 700; text-transform: uppercase; }
+    .sidebar-group-label { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--muted); margin: 0 0 12px; letter-spacing: 0.05em; }
+    .sidebar-links { display: grid; gap: 4px; }
+    .sidebar-links a {
+      display: flex; justify-content: space-between; align-items: center; padding: 10px 12px;
+      border-radius: 8px; color: var(--muted); font-size: 14px; font-weight: 500;
     }
-    .hint { color: var(--muted); font-size: 13px; margin-top: 8px; }
-    .error {
-      color: var(--danger);
-      font-weight: 600;
-      margin-top: 16px;
-      white-space: pre-wrap;
-    }
-    .error-banner {
-      display: grid;
-      gap: 8px;
-      padding: 16px;
-      margin-top: 16px;
-      border-radius: 12px;
-      border: 1px solid rgba(239, 68, 68, 0.3);
-      background: rgba(239, 68, 68, 0.1);
-      color: #fca5a5;
-    }
-    .error-banner strong { font-size: 15px; color: #fef2f2; }
-    .error-banner span { font-size: 13px; }
-    .output {
-      padding: 32px;
-      min-height: 300px;
-      position: relative;
-      overflow: hidden;
-    }
-    .output::before {
-      content: '';
-      position: absolute;
-      inset: 0 auto auto 0;
-      width: 100%;
-      height: 4px;
-      background: linear-gradient(90deg, var(--accent), var(--accent-alt));
-    }
-    .result-intro {
-      display: grid;
-      gap: 12px;
-      margin-bottom: 24px;
-      padding: 20px;
-      border-radius: 16px;
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid var(--border);
-    }
-    .result-intro-top {
-      display: flex;
-      justify-content: space-between;
-      gap: 16px;
-      align-items: flex-start;
-      flex-wrap: wrap;
-    }
-    .result-kicker {
-      margin: 0;
-      text-transform: uppercase;
-      letter-spacing: 0.15em;
-      font-size: 12px;
-      font-weight: 800;
-      color: var(--accent);
-      font-family: 'Outfit', sans-serif;
-    }
-    .result-intro h3 {
-      margin: 8px 0 0;
-      font-size: 22px;
-    }
-    .result-intro p {
-      margin: 0;
-      color: var(--muted);
-      font-size: 14px;
-      max-width: 70ch;
-    }
-    .result-rail { display: flex; flex-wrap: wrap; gap: 8px; }
-    .result-rail .chip {
-      display: inline-flex; align-items: center; gap: 8px;
-      padding: 6px 12px; border-radius: 999px;
-      background: rgba(45, 212, 191, 0.1); border: 1px solid rgba(45, 212, 191, 0.2);
-      color: var(--accent); font-size: 12px; font-weight: 600;
-    }
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 16px;
-      margin-bottom: 24px;
-    }
-    .stat {
-      background: rgba(0, 0, 0, 0.2);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 16px;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-    .stat:hover {
-      transform: translateY(-2px);
-      background: rgba(255, 255, 255, 0.03);
-      box-shadow: var(--shadow-soft);
-    }
-    .stat .label {
-      color: var(--muted);
-      font-size: 12px;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      font-weight: 600;
-    }
-    .stat .value {
-      font-size: 32px;
-      font-weight: 800;
-      margin-top: 8px;
-      color: var(--accent);
-    }
-    .tabs {
-      display: inline-flex;
-      gap: 8px;
-      margin-bottom: 16px;
-      flex-wrap: wrap;
-      padding: 6px;
-      border-radius: 14px;
-      background: rgba(0, 0, 0, 0.3);
-      border: 1px solid var(--border);
-    }
-    .tab {
-      border: none;
-      background: transparent;
-      color: var(--muted);
-      border-radius: 10px;
-      padding: 10px 16px;
-      font-weight: 600;
-      cursor: pointer;
-      box-shadow: none;
-      transition: all 0.2s ease;
-    }
-    .tab:hover { color: var(--text); background: rgba(255, 255, 255, 0.05); }
-    .tab.active {
-      background: var(--accent);
-      color: #000;
-      box-shadow: 0 4px 12px rgba(45, 212, 191, 0.3);
-    }
-    .report-view { min-height: 300px; padding-top: 8px; }
-    .detail-shell { display: grid; gap: 24px; }
-    .toc-shell { display: grid; grid-template-columns: 240px 1fr; gap: 24px; align-items: start; }
-    .toc-card {
-      position: sticky;
-      top: 24px;
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 20px;
-    }
-    .toc-card h3 { margin: 0 0 16px; font-size: 18px; }
+    .sidebar-links a:hover { background: var(--bg-soft); color: var(--text); }
+    .sidebar-links a.active { background: var(--accent); color: #fff; }
+    .sidebar-links a.active .hint { color: rgba(255,255,255,0.7); }
+    .sidebar-links .hint { font-size: 12px; font-weight: 400; }
+    .sidebar-section { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; }
+    .sidebar-section h3 { margin: 0 0 16px; font-size: 14px; text-transform: uppercase; }
+    .sidebar-stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .sidebar-stat { background: var(--panel-solid); border: 1px solid var(--border); padding: 12px; border-radius: 8px; }
+    .sidebar-stat .label { font-size: 11px; color: var(--muted); text-transform: uppercase; margin: 0; }
+    .sidebar-stat .value { font-size: 20px; font-weight: 700; color: var(--text); margin: 4px 0 0; }
+    .sidebar-note { font-size: 13px; color: var(--muted); margin: 16px 0 0; }
+    .main-column { min-width: 0; display: grid; gap: 32px; }
+    .workspace-toolbar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; padding: 24px 32px; }
+    .workspace-toolbar .meta { color: var(--muted); font-size: 14px; }
+    .workspace-toolbar-actions { display: flex; gap: 12px; }
+    .output { padding: 32px; min-height: 500px; }
+    .dashboard-shell { margin-bottom: 32px; }
+    .workspace-hero-panel { padding: 24px; }
+    .dashboard-kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; }
+    .dashboard-kpi { padding: 20px; display: grid; gap: 8px; border-top: 4px solid var(--border); border-radius: 12px; background: var(--panel-solid); }
+    .dashboard-kpi.good { border-top-color: var(--good); }
+    .dashboard-kpi.warn { border-top-color: var(--warn); }
+    .dashboard-kpi.risk { border-top-color: var(--danger); }
+    .dashboard-kpi.info { border-top-color: var(--info); }
+    .dashboard-kpi .label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; }
+    .dashboard-kpi .value { font-size: 32px; font-weight: 800; color: var(--text); line-height: 1; }
+    .dashboard-kpi .subtext { font-size: 13px; color: var(--muted); }
+    .dashboard-stack { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-top: 16px; }
+    .dashboard-signal { padding: 16px; border-radius: 12px; background: var(--panel-solid); }
+    .dashboard-signal-head { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 14px; font-weight: 600; }
+    .dashboard-signal-track { height: 6px; background: var(--bg-soft); border-radius: 3px; overflow: hidden; }
+    .dashboard-signal-fill { height: 100%; border-radius: 3px; }
+    .dashboard-signal-fill.good { background: var(--good); }
+    .dashboard-signal-fill.warn { background: var(--warn); }
+    .dashboard-signal-fill.risk { background: var(--danger); }
+    .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 24px; }
+    .dashboard-panel { padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+    .dashboard-panel.wide { grid-column: 1 / -1; }
+    .dashboard-panel-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+    .dashboard-panel-head h3 { margin: 0; font-size: 18px; }
+    .dashboard-panel-head p { margin: 4px 0 0; font-size: 13px; color: var(--muted); }
+    .dashboard-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
+    .dashboard-list li { display: flex; gap: 12px; align-items: center; padding: 12px; background: var(--panel-solid); border: 1px solid var(--border); border-radius: 8px; font-size: 14px; }
+    .dashboard-list li::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+    .dashboard-list li.good::before { background: var(--good); }
+    .dashboard-list li.warn::before { background: var(--warn); }
+    .tabs { display: flex; gap: 8px; border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 24px; }
+    .tab { background: transparent; color: var(--muted); border: none; font-size: 15px; font-weight: 600; padding: 8px 16px; cursor: pointer; position: relative; }
+    .tab:hover { color: var(--text); }
+    .tab.active { color: var(--accent); }
+    .tab.active::after { content: ''; position: absolute; bottom: -17px; left: 0; width: 100%; height: 2px; background: var(--accent); }
+    .detail-shell { display: grid; gap: 32px; }
+    .detail-card { padding: 32px; }
+    .toc-shell { display: grid; grid-template-columns: minmax(220px, 280px) 1fr; gap: 24px; align-items: start; }
+    .toc-card { background: var(--bg-soft); border: 1px solid var(--border); border-radius: 12px; padding: 20px; position: sticky; top: 32px; }
+    .toc-card h3 { margin: 0 0 12px; font-size: 16px; }
     .toc-links { display: grid; gap: 8px; }
     .toc-links a {
-      color: var(--muted);
-      text-decoration: none;
-      font-size: 14px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 8px 12px;
-      border-radius: 8px;
-      transition: all 0.2s ease;
+      display: flex; justify-content: space-between; gap: 12px; padding: 10px 12px;
+      border-radius: 8px; background: var(--panel-solid); border: 1px solid transparent; color: var(--text);
     }
-    .toc-links a:hover {
-      color: var(--accent);
-      background: rgba(45, 212, 191, 0.1);
-      transform: translateX(4px);
+    .toc-links a:hover { border-color: var(--border); }
+    .toc-count { color: var(--muted); font-size: 12px; }
+    .detail-header h2 { font-size: 28px; margin: 0 0 8px; }
+    .detail-section-title { border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 24px; }
+    .detail-section-title h3 { font-size: 20px; margin: 0; }
+    .detail-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
+    .detail-metric { background: var(--panel-solid); padding: 20px; border-radius: 12px; border: 1px solid var(--border); }
+    .detail-metric .label { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 8px; }
+    .detail-metric .value { font-size: 32px; font-weight: 800; color: var(--text); }
+    .summary-columns { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; }
+    .summary-box { padding: 24px; }
+    .summary-box h4 { margin: 0 0 16px; font-size: 16px; }
+    .summary-list { padding-left: 20px; margin: 0; display: grid; gap: 8px; color: var(--muted); }
+    .detail-list { display: grid; gap: 20px; }
+    .field-label {
+      margin-bottom: 8px; font-size: 12px; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.05em;
     }
-    .toc-count { font-size: 12px; opacity: 0.7; }
-    .detail-card {
-      background: rgba(255, 255, 255, 0.02);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 24px;
-      transition: transform 0.2s ease;
-    }
-    .detail-card:hover { border-color: rgba(255, 255, 255, 0.15); }
-    .detail-header {
-      display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; align-items: flex-start;
-    }
-    .detail-header h2 { margin: 4px 0 8px; font-size: 32px; color: var(--accent); }
-    .detail-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
-    .detail-metric {
-      background: rgba(0, 0, 0, 0.2); border: 1px solid var(--border);
-      border-radius: 12px; padding: 16px;
-    }
-    .detail-metric .label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; }
-    .detail-metric .value { font-size: 28px; font-weight: 800; margin-top: 8px; }
-    .detail-section-title { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
-    .detail-section-title h3 { margin: 0; font-size: 20px; color: var(--text); }
-    .summary-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
-    .summary-box {
-      background: rgba(0, 0, 0, 0.2); border: 1px solid var(--border);
-      border-radius: 12px; padding: 20px;
-    }
-    .summary-box h4 { margin: 0 0 12px; font-size: 16px; color: var(--accent); }
-    .summary-list { margin: 0; padding-left: 20px; color: var(--muted); display: grid; gap: 8px; }
-    .summary-list li { line-height: 1.5; }
-    .badge-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
-    .badge {
-      display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px;
-      border-radius: 999px; font-size: 12px; font-weight: 600;
-      border: 1px solid transparent;
-    }
-    .badge.good { background: var(--good-bg); color: var(--good); border-color: rgba(16, 185, 129, 0.2); }
-    .badge.warn { background: var(--warn-bg); color: var(--warn); border-color: rgba(245, 158, 11, 0.2); }
-    .badge.info { background: var(--info-bg); color: var(--info); border-color: rgba(59, 130, 246, 0.2); }
-    .badge.neutral { background: rgba(255, 255, 255, 0.1); color: var(--text); border-color: var(--border); }
+    .pr-overview-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 24px; }
+    .pr-overview-card { padding: 20px; }
+    .pr-overview-card h4 { margin: 0 0 12px; font-size: 16px; }
+    .pr-overview-kpis { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+    .pr-overview-note { font-size: 13px; color: var(--muted); margin: 0; }
+    .filter-bar { display: flex; gap: 16px; flex-wrap: wrap; padding: 16px; background: var(--bg-soft); border-radius: 12px; margin-bottom: 24px; align-items: center; }
+    .filter-bar input, .filter-bar select { flex: 1; min-width: 150px; }
+    .filter-toggle { background: var(--panel-solid); border: 1px solid var(--border); padding: 10px 16px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; }
     .pr-list { display: grid; gap: 16px; }
-    .filter-bar {
-      display: grid; grid-template-columns: 1fr auto auto auto auto; gap: 12px; margin-bottom: 20px;
-      padding: 16px; border-radius: 12px; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--border);
-      align-items: center;
-    }
-    .filter-bar input[type="search"], .filter-bar select { padding: 10px 14px; border-radius: 8px; }
-    .filter-toggle {
-      display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--border);
-      border-radius: 8px; padding: 10px 14px; background: rgba(255, 255, 255, 0.05); font-size: 13px; cursor: pointer; transition: 0.2s;
-    }
-    .filter-toggle:hover { background: rgba(255, 255, 255, 0.1); }
-    .pr-card {
-      border: 1px solid var(--border); border-radius: 16px;
-      background: rgba(255, 255, 255, 0.02); overflow: hidden;
-      transition: all 0.2s ease;
-    }
-    .pr-card:hover { border-color: var(--border-strong); transform: translateY(-2px); box-shadow: var(--shadow-soft); }
-    .pr-card summary {
-      list-style: none; cursor: pointer; display: grid; gap: 16px; padding: 20px;
-    }
-    .pr-card summary::-webkit-details-marker { display: none; }
-    .pr-summary-top { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; }
-    .pr-summary-main { display: grid; gap: 8px; min-width: 0; }
-    .pr-summary-kicker {
-      display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px;
-      border-radius: 999px; background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.2);
-      color: #c4b5fd; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em;
-    }
-    .pr-summary-title { font-size: 18px; font-weight: 600; color: var(--text); }
-    .pr-summary-meta { display: flex; flex-wrap: wrap; gap: 12px; color: var(--muted); font-size: 13px; }
-    .pr-summary-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
-    .pr-summary-stat {
-      background: rgba(0, 0, 0, 0.2); border: 1px solid var(--border);
-      border-radius: 10px; padding: 12px;
-    }
-    .pr-summary-stat .label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px; }
-    .pr-summary-stat .value { font-size: 16px; font-weight: 600; color: var(--text); }
-    .pr-card-body {
-      border-top: 1px solid var(--border); padding: 20px; background: rgba(0, 0, 0, 0.1);
-      display: grid; gap: 16px;
-    }
-    .pr-body-note {
-      display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: center;
-      padding: 12px 16px; border-radius: 12px; background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.2); color: #ddd6fe; font-size: 14px;
-    }
-    .pr-evidence-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
-    .pr-evidence-card {
-      background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border);
-      border-radius: 12px; padding: 16px;
-    }
+    .pr-table-item { background: var(--panel-solid); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; transition: 0.2s; }
+    .pr-table-item:hover { border-color: var(--border-strong); }
+    .pr-table-item summary { padding: 20px; cursor: pointer; display: flex; flex-direction: column; gap: 12px; list-style: none; }
+    .pr-table-item summary::-webkit-details-marker { display: none; }
+    .pr-table-row { display: grid; grid-template-columns: minmax(0, 2.1fr) repeat(4, minmax(120px, 1fr)) minmax(110px, 0.8fr); gap: 16px; align-items: center; }
+    .pr-table-cell { min-width: 0; }
+    .pr-table-summary { display: flex; flex-direction: column; gap: 4px; }
+    .pr-table-title { display: flex; gap: 12px; align-items: center; font-size: 15px; font-weight: 600; }
+    .pr-table-title span { color: var(--muted); font-weight: 400; }
+    .pr-table-meta { color: var(--muted); font-size: 13px; }
+    .pr-table-item[open] { box-shadow: var(--shadow-soft); }
+    .pr-table-details { padding: 24px; border-top: 1px solid var(--border); background: var(--bg-soft); }
+    .pr-card-body { display: grid; gap: 24px; }
+    .pr-body-note { padding: 16px; background: var(--info-bg); color: var(--info); border-radius: 8px; font-size: 14px; }
+    .pr-evidence-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; }
+    .pr-evidence-card { background: var(--panel-solid); padding: 16px; border-radius: 8px; border: 1px solid var(--border); }
     .pr-evidence-card.wide { grid-column: 1 / -1; }
-    .pr-evidence-head { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; margin-bottom: 12px; }
-    .pr-evidence-head h4 { margin: 0; font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--accent); }
-    .pr-evidence-head .meta { margin: 0; font-size: 12px; color: var(--muted); }
-    .pr-meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 16px; color: var(--muted); font-size: 13px; }
-    .pr-meta div strong { color: var(--text); }
-    .pill-row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
-    .pill {
-      display: inline-flex; align-items: center; border-radius: 999px; background: rgba(59, 130, 246, 0.2);
-      color: #93c5fd; padding: 6px 12px; font-size: 12px; font-weight: 600;
-    }
-    .signal-score {
-      display: inline-flex; align-items: center; justify-content: center; min-width: 80px; height: 32px;
-      border-radius: 999px; padding: 0 14px; font-size: 12px; font-weight: 800; color: #fff;
-    }
+    .pr-evidence-head { display: flex; justify-content: space-between; margin-bottom: 12px; }
+    .pr-evidence-head h4 { margin: 0; font-size: 14px; }
+    .pr-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 13px; color: var(--muted); }
+    .pr-meta strong { color: var(--text); }
+    .pill-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .pill { background: var(--bg-soft); color: var(--text); padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+    .signal-score { padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 700; color: #fff; display: inline-block; text-align: center; }
     .signal-score.good { background: var(--good); }
-    .signal-score.warn { background: var(--warn); color: #000; }
+    .signal-score.warn { background: var(--warn); }
     .signal-score.risk { background: var(--danger); }
-    .field-label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px; }
-    .detail-list { margin: 0; padding-left: 20px; display: grid; gap: 12px; color: var(--muted); }
-    .empty-state { color: var(--muted); border: 1px dashed var(--border-strong); padding: 24px; border-radius: 12px; background: rgba(0, 0, 0, 0.2); text-align: center; }
-    .loading-state {
-      display: grid; gap: 12px; place-items: start; color: var(--text);
-      border: 1px solid var(--border); background: rgba(255, 255, 255, 0.03); border-radius: 16px; padding: 24px;
-      animation: pulse 2s infinite ease-in-out;
-    }
-    @keyframes pulse {
-      0% { opacity: 0.8; }
-      50% { opacity: 1; box-shadow: 0 0 20px rgba(45, 212, 191, 0.2); }
-      100% { opacity: 0.8; }
-    }
-    .loading-state .loading-label { margin: 0; text-transform: uppercase; letter-spacing: 0.15em; font-size: 12px; font-weight: 800; color: var(--accent); }
-    .loading-state h3 { margin: 0; font-size: 20px; }
-    .raw-pre {
-      margin: 0; white-space: pre-wrap; word-break: break-word; background: #000; color: #a5b4fc;
-      border-radius: 12px; padding: 20px; overflow: auto; max-height: 70vh; border: 1px solid var(--border);
-    }
-    .meta { color: var(--muted); font-size: 13px; margin-bottom: 16px; }
-    .summary-bars { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 16px; }
-    .bar-card {
-      background: rgba(0, 0, 0, 0.2); border: 1px solid var(--border);
-      border-radius: 12px; padding: 16px; transition: 0.2s;
-    }
-    .bar-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-soft); }
-    .bar-top { display: flex; justify-content: space-between; gap: 12px; align-items: center; margin-bottom: 10px; }
-    .bar-label { font-size: 14px; font-weight: 600; color: var(--text); }
-    .bar-value { font-size: 13px; color: var(--muted); }
-    .bar-track { height: 8px; background: rgba(255, 255, 255, 0.1); border-radius: 999px; overflow: hidden; }
-    .bar-fill { height: 100%; border-radius: inherit; width: 0%; transition: width 1s ease-out; }
-    .bar-fill.good { background: linear-gradient(90deg, var(--good), #34d399); }
-    .bar-fill.warn { background: linear-gradient(90deg, var(--warn), #fbbf24); }
-    .bar-fill.risk { background: linear-gradient(90deg, var(--danger), #f87171); }
-    .comparison-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 16px; }
-    .comparison-panel { background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
-    .comparison-panel h4 { margin: 0 0 10px; font-size: 15px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--accent); }
-    .comparison-panel p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.5; }
-    a { color: var(--accent); }
-    a:hover { color: var(--accent-dark); text-decoration: none; }
+    .signal-score.neutral { background: var(--muted); }
+    .error-banner { background: var(--danger); color: #fff; padding: 16px; border-radius: 12px; margin-top: 24px; }
+    .raw-pre { background: var(--accent); color: #fff; padding: 24px; border-radius: 12px; overflow: auto; font-size: 13px; }
+    .loading-state { padding: 40px; text-align: center; color: var(--muted); font-size: 16px; }
+    .loading-label { margin: 0 0 8px; font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+    .empty-state { padding: 60px 40px; text-align: center; border: 2px dashed var(--border); border-radius: 16px; color: var(--muted); font-size: 16px; }
+    .bar-card { padding: 20px; }
+    .bar-top { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 14px; font-weight: 600; }
+    .bar-value { color: var(--muted); }
+    .bar-track { height: 8px; background: var(--bg-soft); border-radius: 4px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 4px; transition: 0.5s ease-out; }
+    .bar-fill.good { background: var(--good); }
+    .bar-fill.warn { background: var(--warn); }
+    .bar-fill.risk { background: var(--danger); }
+    .comparison-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
+    .comparison-panel { padding: 20px; }
+    .comparison-panel h4 { margin: 0 0 12px; font-size: 16px; }
+    .comparison-panel p { margin: 0; color: var(--muted); font-size: 14px; }
+    .pr-table-head { display: none; }
+    .badge-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+    .pr-table-cell .signal-score { padding: 6px 16px; font-size: 13px; border-radius: 16px; }
     @media (max-width: 980px) {
-      .hero, .grid { grid-template-columns: 1fr; }
-      .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .toc-shell, .filter-bar, .summary-bars, .comparison-grid { grid-template-columns: 1fr; }
-      .detail-grid, .summary-columns, .pr-meta, .pr-summary-stats, .pr-evidence-grid, .row { grid-template-columns: 1fr; }
-      .form-shell, .toc-card { position: static; top: auto; }
-      .pr-summary-top { flex-direction: column; }
+      .wrap { padding: 20px; }
+      .admin-header { padding: 24px; }
+      .app-shell, .toc-shell, .pr-table-row { grid-template-columns: 1fr; }
+      .sidebar-column, .toc-card { position: relative; top: 0; max-height: none; overflow: visible; padding-right: 0; }
+      .workspace-toolbar, .output { padding: 24px; }
+      .command-palette { width: 100%; }
     }
+
   </style>
 </head>
 
 <body>
   <div class="wrap">
-    <div class="hero">
-      <div class="card hero-copy">
-        <div class="eyebrow">GitHub Dev Metrics</div>
-        <h1>Read GitHub work like a report, not a log.</h1>
-        <p class="lede">Generate manager-friendly Markdown and JSON reports from GitHub activity across a date range or ISO week. The output is tuned for review conversations, not raw telemetry.</p>
-        <div class="hero-badges">
-          <span class="chip">Narrative-first summary</span>
-          <span class="chip">Evidence-backed PR review</span>
-          <span class="chip">Markdown and JSON exports</span>
+    <div class="card admin-header">
+      <div class="admin-header-copy">
+        <div class="eyebrow">Shadcn-style Admin Dashboard</div>
+        <h1>GitHub Dev Metrics</h1>
+        <p>Generate manager-friendly reports from GitHub activity and review them in a cleaner admin dashboard layout. The page is tuned for high-signal summaries, fast filtering, and PR-level drill-downs.</p>
+      </div>
+      <div class="admin-header-actions">
+        <label class="command-palette" for="global-search">
+          <span class="command-label">Global Search</span>
+          <input id="global-search" type="search" placeholder="Search PRs, titles, or repos">
+        </label>
+        <div class="admin-pills">
+          <span class="admin-pill">Sidebar navigation</span>
+          <span class="admin-pill">Dashboard summary</span>
+          <span class="admin-pill">PR detail drawer</span>
         </div>
-        <div class="hero-note">Fast local analysis with a cleaner report workflow and better evidence layout.</div>
-      </div>
-      <div class="card hero-meta">
-        <p class="meta-title">At a glance</p>
-        <p class="meta-copy">Use the same data engine as the CLI, preview the report here, and export a polished summary for a 1:1, a status note, or a performance discussion.</p>
-        <div class="chip">Runs locally</div>
-        <div class="chip">Uses GITHUB_TOKEN from your shell or .env</div>
-        <div class="chip">Supports markdown and JSON output</div>
       </div>
     </div>
 
-    <div class="page-bridge">
-      <span>Review brief on the left, evidence surface on the right</span>
-    </div>
-
-    <div class="grid">
-      <div class="card form-shell">
+    <div class="app-shell">
+      <aside class="sidebar-column">
+        <div class="card form-shell">
         <form id="report-form">
           <div class="form-intro">
-            <p class="form-kicker">Inputs</p>
-            <h2>Choose the review window and repository scope.</h2>
-            <p>Keep the inputs narrow enough to tell a clean story. Use a week or a date range, then select the output you want to inspect.</p>
+            <p class="form-kicker">Command panel</p>
+            <h2>Define the report before you read the dashboard.</h2>
+            <p>Enter the developer, repositories, and time window here. Everything else on the page is driven by this scope.</p>
+<!-- Example scope removed -->
           </div>
 
           <div class="form-section">
@@ -734,7 +384,7 @@ HTML_TEMPLATE = """<!doctype html>
               <h3>Scope</h3>
               <span>Who and where</span>
             </div>
-            <div class="stack">
+            <div class="row">
               <div>
                 <label for="developer">Developer</label>
                 <input id="developer" name="developer" placeholder="alan-guerrero" required>
@@ -743,7 +393,7 @@ HTML_TEMPLATE = """<!doctype html>
                 <label for="org">Organization</label>
                 <input id="org" name="org" placeholder="MedTrainer365">
               </div>
-              <div>
+              <div style="grid-column: 1 / -1;">
                 <label for="repos">Repositories</label>
                 <textarea id="repos" name="repos" placeholder="medtrainer-react,design-system or MedTrainer365/medtrainer-react" required></textarea>
                 <div class="field-hint">Comma-separated repositories. If you only enter repo names, the organization field is used as the owner.</div>
@@ -808,49 +458,84 @@ HTML_TEMPLATE = """<!doctype html>
           <div class="actions-primary">
             <div class="actions">
               <button type="submit">Generate report</button>
-              <button type="button" class="secondary" id="fill-example">Fill example</button>
             </div>
           </div>
           <div class="error" id="form-error" hidden></div>
         </form>
       </div>
 
-      <div class="card output">
-        <h2 class="section-title">Result</h2>
-        <div id="result-meta" class="meta">Ready to generate a report.</div>
-        <div class="result-intro">
-          <div class="result-intro-top">
+      <div class="card scope-guide">
+        <div class="dashboard-tag">Start here</div>
+        <h2>Use this scope to keep the report focused.</h2>
+        <p>The strongest reports come from a narrow window and a clear repository list. If this setup is broad, the dashboard will be broad too.</p>
+        <ul class="scope-guide-list">
+          <li>Pick one developer first, then add only the repositories that matter for this review.</li>
+          <li>Use a week or a date range. Mixing both makes the output harder to read.</li>
+          <li>Keep the cadence settings stable unless you want to change how strict the report feels.</li>
+        </ul>
+        <div class="scope-guide-actions">
+          <span class="badge info">Developer + repos</span>
+          <span class="badge neutral">Week or date range</span>
+          <span class="badge good">Report ready</span>
+        </div>
+      </div>
+        <div class="card sidebar-nav">
+          <div class="sidebar-brand">
             <div>
-              <p class="result-kicker">Reading view</p>
-              <h3>Evidence first, payload second.</h3>
+              <h2>Control Center</h2>
+              <p>Scope the report, then jump to the evidence panels.</p>
             </div>
-            <div class="result-rail">
-              <span class="chip">Summary-led output</span>
-              <span class="chip">Filterable PR evidence</span>
-              <span class="chip">Exportable Markdown and JSON</span>
-            </div>
+            <span class="sidebar-badge">Live</span>
           </div>
-          <p>The detail tab is designed for a quick narrative read. Use the markdown and raw views only when you need the underlying output or want to copy it elsewhere.</p>
+          <div class="sidebar-group">
+            <p class="sidebar-group-label">Overview</p>
+            <nav class="sidebar-links" aria-label="Overview sections">
+              <a class="active" href="#detail-summary"><span>Summary</span><span class="hint">Top line</span></a>
+              <a href="#detail-metrics"><span>Metrics</span><span class="hint">Signals</span></a>
+            </nav>
+          </div>
+          <div class="sidebar-group">
+            <p class="sidebar-group-label">Evidence</p>
+            <nav class="sidebar-links" aria-label="Evidence sections">
+              <a href="#detail-prs"><span>Pull requests</span><span class="hint">Grid</span></a>
+              <a href="#detail-testing"><span>Testing</span><span class="hint">Coverage</span></a>
+              <a href="#detail-cadence"><span>Cadence</span><span class="hint">Rhythm</span></a>
+              <a href="#detail-review"><span>Reviews</span><span class="hint">Participation</span></a>
+            </nav>
+          </div>
         </div>
-        <div class="stats" id="stats" hidden>
-          <div class="stat"><div class="label">PRs opened</div><div class="value" id="stat-prs-opened">0</div></div>
-          <div class="stat"><div class="label">PRs merged</div><div class="value" id="stat-prs-merged">0</div></div>
-          <div class="stat"><div class="label">Commits</div><div class="value" id="stat-commits">0</div></div>
-          <div class="stat"><div class="label">Tests touched</div><div class="value" id="stat-tests">0</div></div>
+
+        <div class="sidebar-section">
+          <h3>Current run</h3>
+          <div class="sidebar-stat-grid" id="stats" hidden></div>
+          <p class="sidebar-note">Generate a report to populate the dashboard summary and PR signals. The same inputs drive the detail table below.</p>
         </div>
+      </aside>
+
+      <main class="main-column">
+      <div class="card workspace-toolbar">
+        <div>
+          <h2 class="section-title" style="margin-bottom: 8px;">Workspace</h2>
+          <div id="result-meta" class="meta">Ready to generate a report.</div>
+        </div>
+        <div class="workspace-toolbar-actions">
+          <a href="#" id="download-markdown" class="button-link secondary" download="github-dev-metrics.md">Download Markdown</a>
+          <a href="#" id="download-json" class="button-link secondary" download="github-dev-metrics.json">Download JSON</a>
+        </div>
+      </div>
+
+      <div class="card output">
+        <div class="dashboard-shell" id="workspace-hero" hidden></div>
         <div class="tabs">
           <button type="button" class="tab active" data-view="detail">Detail</button>
           <button type="button" class="tab" data-view="markdown">Markdown</button>
           <button type="button" class="tab" data-view="raw">Raw JSON</button>
         </div>
-        <div class="actions" style="margin-top: 0; margin-bottom: 12px;">
-          <a href="#" id="download-markdown" class="button-link secondary" download="github-dev-metrics.md">Download Markdown</a>
-          <a href="#" id="download-json" class="button-link secondary" download="github-dev-metrics.json">Download JSON</a>
-        </div>
         <div id="result" class="report-view">
           <div class="empty-state">Choose a developer, scope the repositories, and generate a report to see the narrative view here.</div>
         </div>
       </div>
+      </main>
     </div>
   </div>
 
@@ -859,17 +544,20 @@ HTML_TEMPLATE = """<!doctype html>
     const formError = document.getElementById('form-error');
     const result = document.getElementById('result');
     const resultMeta = document.getElementById('result-meta');
+    const workspaceHero = document.getElementById('workspace-hero');
     const stats = document.getElementById('stats');
     const downloadMarkdown = document.getElementById('download-markdown');
     const downloadJson = document.getElementById('download-json');
     const tabs = document.querySelectorAll('.tab');
-    const fillExample = document.getElementById('fill-example');
+    const globalSearch = document.getElementById('global-search');
     const cadenceTargetInput = document.getElementById('cadence_target');
     const cadenceMinDaysInput = document.getElementById('cadence_min_days');
     const resetCadenceButton = document.getElementById('reset-cadence');
+    const sidebarLinks = document.querySelectorAll('.sidebar-links a');
     let current = { detail: '', markdown: '', raw: '', report: null, defaultRiskOnly: false };
     let activeView = 'detail';
     const cadenceStorageKey = 'github-dev-metrics:cadence-settings';
+    let detailSectionObserver = null;
 
     function escapeHtml(value) {
       return String(value ?? '')
@@ -892,6 +580,122 @@ HTML_TEMPLATE = """<!doctype html>
         return `<div class="empty-state">${escapeHtml(emptyText)}</div>`;
       }
       return `<ul class="summary-list">${items.map(item => `<li>${escapeHtml(item)}</li>`).join('')}</ul>`;
+    }
+
+    function renderSidebarStat(label, value, subtext = '') {
+      return `
+        <div class="sidebar-stat">
+          <div class="label">${escapeHtml(label)}</div>
+          <div class="value">${escapeHtml(value)}</div>
+          ${subtext ? `<div class="subtext" style="font-size: 11px; line-height: 1.35; margin-top: 4px;">${escapeHtml(subtext)}</div>` : ''}
+        </div>
+      `;
+    }
+
+    function renderDashboardKpi(label, value, subtext = '', tone = 'neutral') {
+      return `
+        <div class="dashboard-kpi ${tone}">
+          <div class="label">${escapeHtml(label)}</div>
+          <div class="value">${escapeHtml(value)}</div>
+          ${subtext ? `<div class="subtext">${escapeHtml(subtext)}</div>` : ''}
+        </div>
+      `;
+    }
+
+    function renderSignalRow(label, value, percentValue, tone = 'neutral') {
+      return `
+        <div class="dashboard-signal">
+          <div class="dashboard-signal-head">
+            <span>${escapeHtml(label)}</span>
+            <strong>${escapeHtml(value)}</strong>
+          </div>
+          <div class="dashboard-signal-track">
+            <div class="dashboard-signal-fill ${tone}" style="width: ${Math.max(0, Math.min(100, percentValue))}%;"></div>
+          </div>
+        </div>
+      `;
+    }
+
+    function buildDashboardHtml(report) {
+      const metrics = report.metrics || {};
+      const pullRequests = metrics.pull_requests || {};
+      const testing = metrics.testing || {};
+      const gitHygiene = metrics.git_hygiene || {};
+      const commitActivity = metrics.commit_activity || {};
+      const reviewParticipation = metrics.review_participation || {};
+      const summary = report.summary || {};
+      const cadence = commitActivity.cadence || {};
+      const prsOpened = Number(pullRequests.opened || 0);
+      const prsMerged = Number(pullRequests.merged || 0);
+      const prsOpen = Number(pullRequests.open || 0);
+      const requestedChanges = Number(pullRequests.requested_changes || 0);
+      const prsWithTests = Number(testing.prs_with_tests || 0);
+      const prsWithoutTests = Number(testing.prs_without_tests || 0);
+      const noisyPrs = Number(gitHygiene.prs_with_noisy_commits?.length || 0);
+      const reviewComments = Number(reviewParticipation.review_comments || 0);
+      const reviewSubmissions = Number(reviewParticipation.submitted_reviews || 0);
+      const cadencePct = Math.round(Number(cadence.coverage_ratio || 0) * 100);
+      const testCoveragePercent = percent(prsWithTests, prsOpened);
+      const reviewFriction = requestedChanges + noisyPrs + reviewComments;
+      const positiveSignals = (summary.positive_signals || []).slice(0, 3);
+      const opportunitySignals = (summary.opportunity_signals || []).slice(0, 3);
+
+      return `
+        ${renderSidebarStat('PRs opened', fmtNumber(prsOpened), `${fmtNumber(prsMerged)} merged`)}
+        ${renderSidebarStat('Open PRs', fmtNumber(prsOpen), `${fmtNumber(prsWithTests)} with tests`)}
+        ${renderSidebarStat('Test coverage', `${fmtNumber(testCoveragePercent)}%`, `${fmtNumber(prsWithoutTests)} without tests`)}
+        ${renderSidebarStat('Risk', fmtNumber(reviewFriction), `${fmtNumber(noisyPrs)} noisy PRs`)}
+      `;
+    }
+
+    function buildWorkspaceHeroHtml(report) {
+      const metrics = report.metrics || {};
+      const pullRequests = metrics.pull_requests || {};
+      const testing = metrics.testing || {};
+      const gitHygiene = metrics.git_hygiene || {};
+      const commitActivity = metrics.commit_activity || {};
+      const reviewParticipation = metrics.review_participation || {};
+      const summary = report.summary || {};
+      const cadence = commitActivity.cadence || {};
+      const prsOpened = Number(pullRequests.opened || 0);
+      const prsMerged = Number(pullRequests.merged || 0);
+      const prsOpen = Number(pullRequests.open || 0);
+      const requestedChanges = Number(pullRequests.requested_changes || 0);
+      const prsWithTests = Number(testing.prs_with_tests || 0);
+      const prsWithoutTests = Number(testing.prs_without_tests || 0);
+      const noisyPrs = Number(gitHygiene.prs_with_noisy_commits?.length || 0);
+      const reviewComments = Number(reviewParticipation.review_comments || 0);
+      const reviewSubmissions = Number(reviewParticipation.submitted_reviews || 0);
+      const cadencePct = Math.round(Number(cadence.coverage_ratio || 0) * 100);
+      const testCoveragePercent = percent(prsWithTests, prsOpened);
+      const reviewFriction = requestedChanges + noisyPrs + reviewComments;
+      const repoLabel = (report.repos || []).join(', ') || 'No repositories selected';
+
+      return `
+        <div class="dashboard-grid">
+          <div class="dashboard-panel wide workspace-hero-panel">
+            <div class="dashboard-panel-head">
+              <div>
+                <div class="dashboard-tag">At a glance</div>
+                <h3>${escapeHtml(report.developer)} · ${escapeHtml(report.date_from)} to ${escapeHtml(report.date_to)}</h3>
+                <p>${escapeHtml(repoLabel)}</p>
+              </div>
+              <div class="dashboard-tag">${report.week ? `Week ${escapeHtml(report.week)}` : 'Custom range'}</div>
+            </div>
+            <div class="dashboard-kpi-grid">
+              ${renderDashboardKpi('PRs opened', fmtNumber(prsOpened), `${fmtNumber(prsMerged)} merged`, prsOpen ? 'warn' : 'good')}
+              ${renderDashboardKpi('Open PRs', fmtNumber(prsOpen), `${fmtNumber(reviewSubmissions)} reviews submitted`, prsOpen ? 'warn' : 'good')}
+              ${renderDashboardKpi('Test coverage', `${fmtNumber(testCoveragePercent)}%`, `${fmtNumber(prsWithoutTests)} without tests`, testCoveragePercent >= 70 ? 'good' : testCoveragePercent >= 40 ? 'warn' : 'risk')}
+              ${renderDashboardKpi('Review friction', fmtNumber(reviewFriction), `${fmtNumber(noisyPrs)} noisy PRs`, reviewFriction >= 4 ? 'risk' : reviewFriction >= 2 ? 'warn' : 'good')}
+            </div>
+            <div class="dashboard-stack">
+              ${renderSignalRow('Testing coverage', `${fmtNumber(testCoveragePercent)}%`, testCoveragePercent, testCoveragePercent >= 70 ? 'good' : testCoveragePercent >= 40 ? 'warn' : 'risk')}
+              ${renderSignalRow('Review friction', fmtNumber(reviewFriction), Math.min(100, reviewFriction * 20), reviewFriction >= 4 ? 'risk' : reviewFriction >= 2 ? 'warn' : 'good')}
+              ${renderSignalRow('Cadence', `${fmtNumber(cadencePct)}%`, cadencePct, cadence.has_almost_daily_cadence ? 'good' : cadencePct >= 40 ? 'warn' : 'risk')}
+            </div>
+          </div>
+        </div>
+      `;
     }
 
     function badge(text, kind = 'neutral') {
@@ -1006,39 +810,44 @@ HTML_TEMPLATE = """<!doctype html>
       const riskLabel = riskScore >= 4 ? 'High risk' : riskScore >= 2 ? 'Medium risk' : 'Low risk';
 
       return `
-        <details class="pr-card" data-risk-score="${riskScore}" data-status="${pr.merged_at ? 'merged' : pr.state}" data-has-tests="${testFiles.length ? '1' : '0'}" data-noisy="${noisyMessages.length ? '1' : '0'}">
+        <details class="pr-table-item" data-risk-score="${riskScore}" data-status="${pr.merged_at ? 'merged' : pr.state}" data-has-tests="${testFiles.length ? '1' : '0'}" data-noisy="${noisyMessages.length ? '1' : '0'}" data-sort-risk="${riskScore}" data-sort-files="${pr.changed_files}" data-sort-review="${reviewIterations}" data-sort-created="${escapeHtml(pr.created_at)}" data-sort-title="${escapeHtml(pr.title.toLowerCase())}">
           <summary>
-            <div class="pr-summary-top">
-              <div class="pr-summary-main">
-                <div class="pr-summary-kicker">${escapeHtml(pr.repo)} · #${pr.number}</div>
-                <div class="pr-summary-title">${escapeHtml(pr.title)}</div>
-                <div class="pr-summary-meta">
-                  <span>${escapeHtml(statusDetail)}</span>
-                  <span>Created ${escapeHtml(pr.created_at)}</span>
-                  <span>${fmtNumber(pr.changed_files)} files changed</span>
+            <div class="pr-table-row">
+              <div class="pr-table-cell">
+                <div class="pr-table-summary">
+                  <div class="pr-table-title">
+                    <strong>${escapeHtml(pr.repo)}#${pr.number}</strong>
+                    <span>${escapeHtml(pr.title)}</span>
+                  </div>
+                  <div class="pr-table-meta">Created ${escapeHtml(pr.created_at)} · ${fmtNumber(pr.changed_files)} files changed</div>
                 </div>
               </div>
-              <div class="pill-row">
+              <div class="pr-table-cell">
+                <div class="badge-row" style="margin-top: 0;">
+                  ${badges[0]}
+                </div>
+                <div class="pr-table-meta">${escapeHtml(statusDetail)}</div>
+              </div>
+              <div class="pr-table-cell">
+                <div class="badge-row" style="margin-top: 0;">
+                  ${badges.slice(1).join('')}
+                </div>
+                <div class="pr-table-meta">${escapeHtml(testSummary)} · ${escapeHtml(noisySummary)}</div>
+              </div>
+              <div class="pr-table-cell">
+                <div class="pr-table-meta">${fmtNumber(reviewIterations)} iteration(s)</div>
+                <div class="pr-table-meta">${escapeHtml(reviewStateEntries || 'No reviews found')}</div>
+              </div>
+              <div class="pr-table-cell">
                 <span class="signal-score ${scoreClass(riskScore)}">${riskLabel}</span>
-                ${badges.join('')}
               </div>
-            </div>
-            <div class="pr-summary-stats">
-              <div class="pr-summary-stat">
-                <div class="label">Status</div>
-                <div class="value">${escapeHtml(statusLabel)}</div>
-              </div>
-              <div class="pr-summary-stat">
-                <div class="label">Tests</div>
-                <div class="value">${escapeHtml(testSummary)}</div>
-              </div>
-              <div class="pr-summary-stat">
-                <div class="label">Commit trail</div>
-                <div class="value">${escapeHtml(noisySummary)}</div>
+              <div class="pr-table-cell" style="text-align: right;">
+                <div class="pr-table-meta">${fmtNumber(pr.additions)} + / ${fmtNumber(pr.deletions)} -</div>
+                <div class="pr-table-meta">${fmtNumber(pr.changed_files)} files</div>
               </div>
             </div>
           </summary>
-          <div class="pr-card-body">
+          <div class="pr-table-details">
             <div class="pr-body-note">
               <strong>${escapeHtml(pr.repo)}#${pr.number}</strong>
               <span>${escapeHtml(pr.title)}</span>
@@ -1114,6 +923,29 @@ HTML_TEMPLATE = """<!doctype html>
       const testCoveragePercent = percent(prsWithTests, prsOpened);
       const reviewFriction = requestedChanges + noisyPrs + reviewComments;
       const cadencePct = Math.round((Number(cadence.coverage_ratio || 0) * 100));
+      const prStatusCounts = prs.reduce((acc, pr) => {
+        if (pr.merged_at) acc.merged += 1;
+        else if (pr.state === 'open') acc.open += 1;
+        else acc.closed += 1;
+        return acc;
+      }, { open: 0, merged: 0, closed: 0 });
+      const prSignalCounts = prs.reduce((acc, pr) => {
+        const key = `${pr.repo}#${pr.number}`;
+        const testFiles = testing.pr_test_files?.[key] || [];
+        const noisyMessages = gitHygiene.prs_with_noisy_commits?.find(item => item.repo === pr.repo && item.number === pr.number)?.messages || [];
+        const riskScore = [
+          pr.state === 'open' ? 1 : 0,
+          testFiles.length ? 0 : 1,
+          noisyMessages.length ? 1 : 0,
+          (pr.review_comments || []).length ? 1 : 0,
+          (testing.merged_without_test_changes || []).some(item => item.repo === pr.repo && item.number === pr.number) ? 1 : 0,
+        ].reduce((sum, value) => sum + value, 0);
+        if (testFiles.length) acc.withTests += 1;
+        else acc.noTests += 1;
+        if (noisyMessages.length) acc.noisy += 1;
+        if (riskScore >= 2) acc.highRisk += 1;
+        return acc;
+      }, { withTests: 0, noTests: 0, noisy: 0, highRisk: 0 });
       const followUps = [
         'What validation steps were completed before opening the PR?',
         'Which parts of the implementation were covered by automated tests?',
@@ -1264,6 +1096,36 @@ HTML_TEMPLATE = """<!doctype html>
             <div class="detail-section-title">
               <h3>Pull Request Evidence</h3>
             </div>
+            <div class="pr-overview-grid">
+              <div class="pr-overview-card">
+                <h4>Status mix</h4>
+                <div class="pr-overview-kpis">
+                  ${badge(`Open ${fmtNumber(prStatusCounts.open)}`, prStatusCounts.open ? 'warn' : 'neutral')}
+                  ${badge(`Merged ${fmtNumber(prStatusCounts.merged)}`, prStatusCounts.merged ? 'good' : 'neutral')}
+                  ${badge(`Closed ${fmtNumber(prStatusCounts.closed)}`, prStatusCounts.closed ? 'info' : 'neutral')}
+                </div>
+                <p class="pr-overview-note">Shows the shape of delivery at a glance so you can see whether the window was mostly active work, completed work, or cleanup.</p>
+              </div>
+              <div class="pr-overview-card">
+                <h4>Evidence signals</h4>
+                <div class="pr-overview-kpis">
+                  ${badge(`With tests ${fmtNumber(prSignalCounts.withTests)}`, prSignalCounts.withTests ? 'good' : 'neutral')}
+                  ${badge(`No tests ${fmtNumber(prSignalCounts.noTests)}`, prSignalCounts.noTests ? 'warn' : 'neutral')}
+                  ${badge(`Noisy ${fmtNumber(prSignalCounts.noisy)}`, prSignalCounts.noisy ? 'warn' : 'neutral')}
+                  ${badge(`High risk ${fmtNumber(prSignalCounts.highRisk)}`, prSignalCounts.highRisk ? 'warn' : 'neutral')}
+                </div>
+                <p class="pr-overview-note">This highlights which PRs deserve the first review pass, especially when testing or commit hygiene is weak.</p>
+              </div>
+              <div class="pr-overview-card">
+                <h4>Fast actions</h4>
+                <div class="pr-overview-kpis">
+                  ${badge(`Risk ${fmtNumber(reviewFriction)}`, reviewFriction ? 'warn' : 'good')}
+                  ${badge(`Tests ${fmtNumber(testCoveragePercent)}%`, testCoveragePercent >= 70 ? 'good' : testCoveragePercent >= 40 ? 'warn' : 'neutral')}
+                  ${badge(`Cadence ${fmtNumber(cadencePct)}%`, cadence.has_almost_daily_cadence ? 'good' : cadencePct >= 40 ? 'warn' : 'neutral')}
+                </div>
+                <p class="pr-overview-note">Use the filter bar to isolate test coverage, noisy commits, or high-risk PRs after scanning the summary.</p>
+              </div>
+            </div>
             <div class="hint" style="margin: 0 0 12px;">
               Search by title, repo, or PR number, then narrow the evidence to the signal you want to review.
             </div>
@@ -1282,11 +1144,31 @@ HTML_TEMPLATE = """<!doctype html>
                 <option value="noisy">Noisy commits</option>
                 <option value="high-risk">High risk</option>
               </select>
+              <select id="pr-sort">
+                <option value="risk-desc">Sort: risk</option>
+                <option value="changes-desc">Sort: changes</option>
+                <option value="review-desc">Sort: review</option>
+                <option value="newest">Sort: newest</option>
+                <option value="oldest">Sort: oldest</option>
+                <option value="title-asc">Sort: title</option>
+              </select>
               <label class="filter-toggle"><input type="checkbox" id="pr-filter-focus"> Focus risky PRs</label>
               <button type="button" class="secondary" id="pr-filter-high-risk">High risk only</button>
               <button type="button" class="secondary" id="pr-filter-reset">Reset filters</button>
             </div>
-            ${prs.length ? `<div class="pr-list">${prs.map(pr => renderPrCard(pr, report)).join('')}</div>` : '<div class="empty-state">No pull requests matched the selection.</div>'}
+            ${prs.length ? `
+              <div class="pr-table">
+                <div class="pr-table-head">
+                  <div>Pull Request</div>
+                  <div>Status</div>
+                  <div>Evidence</div>
+                  <div>Review</div>
+                  <div>Risk</div>
+                  <div>Changes</div>
+                </div>
+                <div class="pr-list">${prs.map(pr => renderPrCard(pr, report)).join('')}</div>
+              </div>
+            ` : '<div class="empty-state">No pull requests matched the selection.</div>'}
           </section>
 
           <section class="detail-card" id="detail-testing">
@@ -1352,7 +1234,12 @@ HTML_TEMPLATE = """<!doctype html>
       if (activeView === 'detail') {
         result.innerHTML = current.detail || '<div class="empty-state">Generate a report to open the narrative view.</div>';
         attachPrFilters();
+        attachDetailSectionObserver();
         return;
+      }
+      if (detailSectionObserver) {
+        detailSectionObserver.disconnect();
+        detailSectionObserver = null;
       }
       if (activeView === 'markdown') {
         result.innerHTML = `<pre class="raw-pre">${escapeHtml(current.markdown || 'Markdown export will appear here after a report is generated.')}</pre>`;
@@ -1379,15 +1266,71 @@ HTML_TEMPLATE = """<!doctype html>
       renderCurrentView();
     }
 
+    function setActiveSidebarLink(targetId) {
+      sidebarLinks.forEach(link => {
+        const href = link.getAttribute('href') || '';
+        link.classList.toggle('active', href === `#${targetId}`);
+      });
+    }
+
+    function attachDetailSectionObserver() {
+      if (detailSectionObserver) {
+        detailSectionObserver.disconnect();
+        detailSectionObserver = null;
+      }
+      if (!('IntersectionObserver' in window)) {
+        return;
+      }
+      const sections = document.querySelectorAll('[id^="detail-"]');
+      if (!sections.length) {
+        return;
+      }
+      detailSectionObserver = new IntersectionObserver(entries => {
+        const visible = entries
+          .filter(entry => entry.isIntersecting)
+          .sort((left, right) => right.intersectionRatio - left.intersectionRatio)[0];
+        if (visible?.target?.id) {
+          setActiveSidebarLink(visible.target.id);
+        }
+      }, { rootMargin: '-20% 0px -60% 0px', threshold: [0.1, 0.25, 0.5] });
+      sections.forEach(section => detailSectionObserver.observe(section));
+    }
+
+    function syncGlobalSearch(value) {
+      if (!current.detail) {
+        return;
+      }
+      if (activeView !== 'detail') {
+        setActiveView('detail');
+      }
+      window.requestAnimationFrame(() => {
+        const search = document.getElementById('pr-filter-search');
+        if (!search) {
+          return;
+        }
+        search.value = value;
+        search.dispatchEvent(new Event('input'));
+        if (!value) {
+          return;
+        }
+        const prsSection = document.getElementById('detail-prs');
+        if (prsSection) {
+          prsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    }
+
     function attachPrFilters() {
       const search = document.getElementById('pr-filter-search');
       const status = document.getElementById('pr-filter-status');
       const signal = document.getElementById('pr-filter-signal');
+      const sort = document.getElementById('pr-sort');
       const focus = document.getElementById('pr-filter-focus');
       const highRisk = document.getElementById('pr-filter-high-risk');
       const reset = document.getElementById('pr-filter-reset');
-      const cards = Array.from(result.querySelectorAll('.pr-card'));
-      if (!search || !status || !signal || !focus || !highRisk || !reset || !cards.length) {
+      const cards = Array.from(result.querySelectorAll('.pr-table-item'));
+      const list = cards[0]?.parentElement;
+      if (!search || !status || !signal || !sort || !focus || !highRisk || !reset || !cards.length || !list) {
         return;
       }
       if (current.defaultRiskOnly) {
@@ -1396,6 +1339,27 @@ HTML_TEMPLATE = """<!doctype html>
         signal.value = 'high-risk';
         current.defaultRiskOnly = false;
       }
+      const sortCards = () => {
+        const comparator = (left, right) => {
+          const sortKey = sort.value;
+          if (sortKey === 'title-asc') {
+            return (left.dataset.sortTitle || '').localeCompare(right.dataset.sortTitle || '');
+          }
+          if (sortKey === 'newest' || sortKey === 'oldest') {
+            const leftDate = Date.parse(left.dataset.sortCreated || '') || 0;
+            const rightDate = Date.parse(right.dataset.sortCreated || '') || 0;
+            return sortKey === 'newest' ? rightDate - leftDate : leftDate - rightDate;
+          }
+          if (sortKey === 'changes-desc') {
+            return Number(right.dataset.sortFiles || 0) - Number(left.dataset.sortFiles || 0);
+          }
+          if (sortKey === 'review-desc') {
+            return Number(right.dataset.sortReview || 0) - Number(left.dataset.sortReview || 0);
+          }
+          return Number(right.dataset.sortRisk || 0) - Number(left.dataset.sortRisk || 0);
+        };
+        [...cards].sort(comparator).forEach(card => list.appendChild(card));
+      };
       const apply = () => {
         const q = search.value.trim().toLowerCase();
         const selectedStatus = status.value;
@@ -1419,10 +1383,12 @@ HTML_TEMPLATE = """<!doctype html>
           const focusMatch = !focusMode || riskScore >= 2;
           card.style.display = statusMatch && signalMatch && searchMatch && focusMatch ? '' : 'none';
         });
+        sortCards();
       };
       search.oninput = apply;
       status.onchange = apply;
       signal.onchange = apply;
+      sort.onchange = apply;
       focus.onchange = apply;
       highRisk.onclick = () => {
         focus.checked = true;
@@ -1435,6 +1401,7 @@ HTML_TEMPLATE = """<!doctype html>
         search.value = '';
         status.value = 'all';
         signal.value = 'all';
+        sort.value = 'risk-desc';
         focus.checked = false;
         apply();
       };
@@ -1445,6 +1412,25 @@ HTML_TEMPLATE = """<!doctype html>
       tab.addEventListener('click', () => setActiveView(tab.dataset.view));
     });
 
+    sidebarLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        const targetId = (link.getAttribute('href') || '').replace('#', '');
+        if (targetId) {
+          setActiveSidebarLink(targetId);
+        }
+      });
+    });
+
+    if (globalSearch) {
+      globalSearch.addEventListener('input', () => syncGlobalSearch(globalSearch.value.trim()));
+      globalSearch.addEventListener('keydown', event => {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          syncGlobalSearch(globalSearch.value.trim());
+        }
+      });
+    }
+
     loadCadenceSettings();
     cadenceTargetInput.addEventListener('input', saveCadenceSettings);
     cadenceMinDaysInput.addEventListener('input', saveCadenceSettings);
@@ -1453,25 +1439,22 @@ HTML_TEMPLATE = """<!doctype html>
       setError('');
     });
 
-    fillExample.addEventListener('click', () => {
-      document.getElementById('developer').value = 'alan-guerrero';
-      document.getElementById('org').value = 'MedTrainer365';
-      document.getElementById('repos').value = 'medtrainer-react';
-      document.getElementById('week').value = '2026-W18';
-      document.getElementById('format').value = 'markdown';
-      document.getElementById('cadence_target').value = '0.6';
-      document.getElementById('cadence_min_days').value = '5';
-      document.getElementById('date_from').value = '';
-      document.getElementById('date_to').value = '';
-      saveCadenceSettings();
-      setError('');
-    });
+    // Example fill logic removed
 
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
+
+      const submitBtn = form.querySelector('button[type="submit"]');
+      const originalBtnText = submitBtn.textContent;
+      const formElements = form.querySelectorAll('input, select, textarea, button');
+
+      formElements.forEach(el => el.disabled = true);
+      submitBtn.textContent = 'Generating...';
+
       setError('');
       result.innerHTML = '<div class="loading-state"><p class="loading-label">Generating</p><h3>Building the report narrative.</h3><p>Collecting GitHub activity, summarizing evidence, and shaping the output for review.</p></div>';
       resultMeta.textContent = 'Working on the report...';
+      workspaceHero.hidden = true;
       stats.hidden = true;
 
       const payload = {
@@ -1504,11 +1487,10 @@ HTML_TEMPLATE = """<!doctype html>
           defaultRiskOnly: true,
         };
         resultMeta.textContent = `Period: ${data.report.date_from} to ${data.report.date_to}`;
+        workspaceHero.innerHTML = buildWorkspaceHeroHtml(data.report);
+        workspaceHero.hidden = false;
+        stats.innerHTML = buildDashboardHtml(data.report);
         stats.hidden = false;
-        document.getElementById('stat-prs-opened').textContent = data.report.metrics.pull_requests.opened;
-        document.getElementById('stat-prs-merged').textContent = data.report.metrics.pull_requests.merged;
-        document.getElementById('stat-commits').textContent = data.report.metrics.commit_activity.authored_commits;
-        document.getElementById('stat-tests').textContent = data.report.metrics.testing.prs_with_tests;
 
         downloadMarkdown.href = 'data:text/markdown;charset=utf-8,' + encodeURIComponent(data.report.markdown);
         downloadJson.href = 'data:application/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(data.report.json, null, 2));
@@ -1519,7 +1501,11 @@ HTML_TEMPLATE = """<!doctype html>
           'Check the repository name, date range, cadence settings, and GitHub token access. Technical detail: ' + error.message,
         );
         resultMeta.textContent = 'No report generated yet.';
+        workspaceHero.hidden = true;
         result.innerHTML = '<div class="empty-state">The report could not be built. Adjust the inputs and try again.</div>';
+      } finally {
+        formElements.forEach(el => el.disabled = false);
+        submitBtn.textContent = originalBtnText;
       }
     });
   </script>
@@ -1647,8 +1633,19 @@ class WebHandler(BaseHTTPRequestHandler):
 
 def run_server(host: str = "127.0.0.1", port: int = 8501) -> None:
     _load_local_env_file()
-    server = ThreadingHTTPServer((host, port), WebHandler)
-    print(f"GitHub Dev Metrics UI available at http://{host}:{port}")
+    server = None
+    bound_port = port
+    for candidate_port in range(port, port + 11):
+        try:
+            server = ThreadingHTTPServer((host, candidate_port), WebHandler)
+            bound_port = candidate_port
+            break
+        except OSError as exc:
+            if getattr(exc, "errno", None) != 98:
+                raise
+    if server is None:
+        raise OSError(f"Unable to bind to any port from {port} to {port + 10}.")
+    print(f"GitHub Dev Metrics UI available at http://{host}:{bound_port}")
     try:
         server.serve_forever()
     except KeyboardInterrupt:
