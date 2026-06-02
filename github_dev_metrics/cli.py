@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import subprocess
 import sys
 from pathlib import Path
 
@@ -17,6 +18,17 @@ from .github_client import GithubAPIError, GithubAuthError, GithubClient
 from .metrics import calculate_metrics
 from .report_json import render_json_report
 from .report_markdown import render_markdown_report
+
+
+def _run_git_command(args: list[str], cwd: Path | None = None) -> str:
+    completed = subprocess.run(
+        ["git", *args],
+        check=True,
+        capture_output=True,
+        text=True,
+        cwd=str(cwd) if cwd else None,
+    )
+    return completed.stdout.strip()
 
 
 def _parse_env_line(line: str) -> tuple[str, str] | None:
@@ -55,6 +67,56 @@ def _load_local_env_file(start_dir: Path | None = None) -> Path | None:
     return None
 
 
+def _parse_github_remote(remote_url: str) -> str | None:
+    normalized = remote_url.strip()
+    if not normalized:
+        return None
+    if normalized.endswith(".git"):
+        normalized = normalized[:-4]
+
+    if normalized.startswith("git@github.com:"):
+        repo = normalized.split(":", 1)[1]
+    elif normalized.startswith("https://github.com/"):
+        repo = normalized[len("https://github.com/") :]
+    elif normalized.startswith("ssh://git@github.com/"):
+        repo = normalized[len("ssh://git@github.com/") :]
+    else:
+        return None
+
+    parts = [part for part in repo.split("/") if part]
+    if len(parts) != 2:
+        return None
+    return "/".join(parts)
+
+
+def _detect_repo_from_git(start_dir: Path | None = None) -> str | None:
+    cwd = (start_dir or Path.cwd()).resolve()
+    try:
+        repo_root = _run_git_command(["rev-parse", "--show-toplevel"], cwd=cwd)
+        remote_url = _run_git_command(["config", "--get", "remote.origin.url"], cwd=Path(repo_root))
+    except (OSError, subprocess.CalledProcessError):
+        return None
+    return _parse_github_remote(remote_url)
+
+
+def _resolve_repos(repos_arg: str | None, org: str | None, start_dir: Path | None = None) -> list[str]:
+    if repos_arg:
+        repos = [repo.strip() for repo in repos_arg.split(",") if repo.strip()]
+        if not repos:
+            raise ValueError("At least one repository must be provided.")
+        normalize_repo_specs(repos, org)
+        return repos
+
+    detected_repo = _detect_repo_from_git(start_dir=start_dir)
+    if detected_repo:
+        return [detected_repo]
+
+    raise ValueError(
+        "Unable to determine repositories automatically. Run inside a git repository with a GitHub "
+        "'origin' remote or provide --repos explicitly."
+    )
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="github-dev-metrics",
@@ -64,8 +126,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--org", help="Default organization for repository names without an owner.")
     parser.add_argument(
         "--repos",
-        required=True,
-        help="Comma-separated list of repositories, either repo names or owner/repo values.",
+        help="Comma-separated list of repositories, either repo names or owner/repo values. Defaults to the current git repo when available.",
     )
     parser.add_argument(
         "--from",
@@ -85,7 +146,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--format",
         choices=("markdown", "json"),
         default="markdown",
-        help="Output format.",
+        help="Output format (default: markdown).",
     )
     parser.add_argument(
         "--cadence-target",
@@ -136,11 +197,7 @@ def main(argv: list[str] | None = None) -> int:
             raise ValueError("--cadence-target must be a fraction between 0 and 1.")
         if args.cadence_min_days < 1:
             raise ValueError("--cadence-min-days must be at least 1.")
-        repos = [repo.strip() for repo in args.repos.split(",") if repo.strip()]
-        if not repos:
-            raise ValueError("At least one repository must be provided.")
-        # Validate early so errors are user-friendly before any API calls happen.
-        normalize_repo_specs(repos, args.org)
+        repos = _resolve_repos(args.repos, args.org)
         client = GithubClient.from_env()
         metrics = collect_metrics(client, args.developer, args.org, repos, date_from, date_to)
         calculated = calculate_metrics(

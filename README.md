@@ -2,6 +2,8 @@
 
 `github-dev-metrics` is a Python CLI for collecting GitHub activity metrics for a specific developer across one or more repositories. It is intended for developer activity reviews, team health conversations, and engineering retrospectives.
 
+When you run it inside a git repository, it can infer the current GitHub repository from the local `origin` remote. In that mode, the only required inputs are the developer plus either an ISO week or a from/to date range, and the default output is Markdown unless you pass `--format json`.
+
 ## Requirements
 
 - `python3` 3.11 or newer
@@ -25,10 +27,7 @@ github-dev-metrics --help
 ```bash
 github-dev-metrics \
   --developer octocat \
-  --org example-org \
-  --repos frontend-app,design-system \
   --week 2026-W18 \
-  --format markdown \
   --output reports/octocat-github-metrics.md
 ```
 
@@ -80,11 +79,8 @@ cp .envrc.example .envrc
 ```bash
 github-dev-metrics \
   --developer octocat \
-  --org example-org \
-  --repos frontend-app,design-system \
   --from 2026-03-01 \
   --to 2026-05-31 \
-  --format markdown \
   --output reports/octocat-github-metrics.md
 ```
 
@@ -93,10 +89,7 @@ You can also use an ISO week shortcut:
 ```bash
 github-dev-metrics \
   --developer octocat \
-  --org example-org \
-  --repos frontend-app,design-system \
   --week 2026-W18 \
-  --format markdown \
   --output reports/octocat-github-metrics.md
 ```
 
@@ -105,12 +98,9 @@ The commit cadence signal is configurable:
 ```bash
 github-dev-metrics \
   --developer octocat \
-  --org example-org \
-  --repos frontend-app \
   --week 2026-W18 \
   --cadence-target 0.7 \
-  --cadence-min-days 4 \
-  --format markdown
+  --cadence-min-days 4
 ```
 
 ```bash
@@ -124,6 +114,14 @@ github-dev-metrics \
 ```
 
 If `--output` is omitted, the report is written to stdout.
+
+If `--repos` is omitted, the CLI tries to use the current git repository by reading `remote.origin.url`. Supported auto-detected remote formats include:
+
+- `git@github.com:owner/repo.git`
+- `https://github.com/owner/repo.git`
+- `ssh://git@github.com/owner/repo.git`
+
+If auto-detection is not possible, pass `--repos` explicitly.
 
 Run `github-dev-metrics --help` to see all supported options.
 
