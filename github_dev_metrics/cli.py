@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -117,6 +118,55 @@ def _resolve_repos(repos_arg: str | None, org: str | None, start_dir: Path | Non
     )
 
 
+def _slugify_filename_part(value: str) -> str:
+    slug = re.sub(r"[^A-Za-z0-9._-]+", "-", value.strip())
+    return slug.strip("._-") or "report"
+
+
+def _normalize_week_label(value: str) -> str:
+    parts = value.split("-")
+    if len(parts) != 2:
+        raise ValueError(
+            f"Invalid week format '{value}'. Use WW-YYYY or YYYY-Www, for example 05-2026 or 2026-W05."
+        )
+    if parts[0].isdigit() and len(parts[0]) == 4 and parts[1].startswith("W") and parts[1][1:].isdigit():
+        return f"{int(parts[1][1:]):02d}-{parts[0]}"
+    if parts[0].isdigit() and parts[1].isdigit() and len(parts[1]) == 4:
+        return f"{int(parts[0]):02d}-{parts[1]}"
+    raise ValueError(
+        f"Invalid week format '{value}'. Use WW-YYYY or YYYY-Www, for example 05-2026 or 2026-W05."
+    )
+
+
+def _default_output_path(
+    developer: str,
+    report_format: str,
+    date_from,
+    date_to,
+    week: str | None = None,
+) -> Path:
+    extension = "md" if report_format == "markdown" else "json"
+    if week:
+        period = f"week-{_normalize_week_label(week)}"
+    else:
+        period = f"{date_from.date().isoformat()}_to_{date_to.date().isoformat()}"
+    filename = f"{_slugify_filename_part(developer)}_{period}.{extension}"
+    return Path("report") / filename
+
+
+def _resolve_output_path(
+    output: str | None,
+    developer: str,
+    report_format: str,
+    date_from,
+    date_to,
+    week: str | None = None,
+) -> Path:
+    if output:
+        return Path(output)
+    return _default_output_path(developer, report_format, date_from, date_to, week=week)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="github-dev-metrics",
@@ -140,7 +190,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--week",
-        help="ISO week in YYYY-Www format, for example 2026-W18. Overrides --from and --to.",
+        help="Week selector in WW-YYYY or YYYY-Www format, for example 05-2026 or 2026-W05. Overrides --from and --to.",
     )
     parser.add_argument(
         "--format",
@@ -162,18 +212,15 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--output",
-        help="Write the report to this path instead of stdout.",
+        help="Write the report to this path. If omitted, a file is written under report/ automatically.",
     )
     return parser
 
 
-def _write_output(text: str, output: str | None) -> None:
-    if output:
-        path = Path(output)
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(text, encoding="utf-8")
-    else:
-        sys.stdout.write(text)
+def _write_output(text: str, path: Path) -> Path:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text, encoding="utf-8")
+    return path
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -209,7 +256,16 @@ def main(argv: list[str] | None = None) -> int:
             report = render_markdown_report(calculated)
         else:
             report = render_json_report(calculated)
-        _write_output(report, args.output)
+        output_path = _resolve_output_path(
+            args.output,
+            args.developer,
+            args.format,
+            date_from,
+            date_to,
+            week=args.week,
+        )
+        written_path = _write_output(report, output_path)
+        sys.stdout.write(f"Wrote {written_path}\n")
         return 0
     except (ValueError, GithubAuthError, GithubAPIError) as exc:
         parser.exit(status=1, message=f"Error: {exc}\n")

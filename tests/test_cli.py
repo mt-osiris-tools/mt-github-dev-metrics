@@ -1,10 +1,18 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
 
-from github_dev_metrics.cli import _parse_github_remote, _resolve_repos, build_parser
+from github_dev_metrics.cli import (
+    _default_output_path,
+    _parse_github_remote,
+    _resolve_repos,
+    _resolve_output_path,
+    build_parser,
+    main,
+)
 
 
 def test_parse_github_remote_supports_https_and_ssh() -> None:
@@ -40,6 +48,62 @@ def test_resolve_repos_requires_git_context_or_explicit_repos(tmp_path: Path) ->
 
 
 def test_parser_defaults_to_markdown_format() -> None:
-    args = build_parser().parse_args(["--developer", "octocat", "--week", "2026-W18"])
+    args = build_parser().parse_args(["--developer", "octocat", "--week", "05-2026"])
 
     assert args.format == "markdown"
+
+
+def test_default_output_path_uses_report_directory_for_markdown() -> None:
+    path = _default_output_path(
+        "octocat",
+        "markdown",
+        datetime(2026, 4, 27, tzinfo=timezone.utc),
+        datetime(2026, 5, 3, tzinfo=timezone.utc),
+        week="05-2026",
+    )
+
+    assert path == Path("report/octocat_week-05-2026.md")
+
+
+def test_default_output_path_uses_json_extension() -> None:
+    path = _default_output_path(
+        "octocat",
+        "json",
+        datetime(2026, 3, 1, tzinfo=timezone.utc),
+        datetime(2026, 5, 31, tzinfo=timezone.utc),
+    )
+
+    assert path == Path("report/octocat_2026-03-01_to_2026-05-31.json")
+
+
+def test_resolve_output_path_prefers_explicit_value() -> None:
+    path = _resolve_output_path(
+        "custom/output.md",
+        "octocat",
+        "markdown",
+        datetime(2026, 3, 1, tzinfo=timezone.utc),
+        datetime(2026, 5, 31, tzinfo=timezone.utc),
+    )
+
+    assert path == Path("custom/output.md")
+
+
+def test_main_writes_default_report_file_and_prints_path(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr("github_dev_metrics.cli._resolve_repos", lambda *args, **kwargs: ["example-org/frontend-app"])
+    monkeypatch.setattr("github_dev_metrics.cli._load_local_env_file", lambda *args, **kwargs: None)
+    monkeypatch.setattr("github_dev_metrics.cli.GithubClient.from_env", lambda: object())
+    monkeypatch.setattr("github_dev_metrics.cli.collect_metrics", lambda *args, **kwargs: object())
+    monkeypatch.setattr("github_dev_metrics.cli.calculate_metrics", lambda metrics, **kwargs: metrics)
+    monkeypatch.setattr("github_dev_metrics.cli.render_markdown_report", lambda metrics: "# report\n")
+
+    exit_code = main(["--developer", "octocat", "--week", "05-2026"])
+
+    assert exit_code == 0
+    report_path = tmp_path / "report" / "octocat_week-05-2026.md"
+    assert report_path.read_text(encoding="utf-8") == "# report\n"
+    assert capsys.readouterr().out == f"Wrote {Path('report/octocat_week-05-2026.md')}\n"

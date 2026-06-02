@@ -54,8 +54,12 @@ def test_parse_iso_week_returns_week_range() -> None:
     start, end = parse_iso_week("2026-W18")
     assert start.date().isoformat() == "2026-04-27"
     assert end.date().isoformat() == "2026-05-03"
+    alt_start, alt_end = parse_iso_week("18-2026")
+    assert (alt_start, alt_end) == (start, end)
     with pytest.raises(ValueError):
         parse_iso_week("2026-18")
+    with pytest.raises(ValueError):
+        parse_iso_week("54-2026")
 
 
 def test_normalize_repo_specs_validates_repo_format() -> None:

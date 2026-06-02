@@ -2,7 +2,7 @@
 
 `github-dev-metrics` is a Python CLI for collecting GitHub activity metrics for a specific developer across one or more repositories. It is intended for developer activity reviews, team health conversations, and engineering retrospectives.
 
-When you run it inside a git repository, it can infer the current GitHub repository from the local `origin` remote. In that mode, the only required inputs are the developer plus either an ISO week or a from/to date range, and the default output is Markdown unless you pass `--format json`.
+When you run it inside a git repository, it can infer the current GitHub repository from the local `origin` remote. In that mode, the only required inputs are the developer plus either a week or a from/to date range, and the CLI writes a Markdown report into `report/` by default unless you pass `--format json`.
 
 ## Requirements
 
@@ -27,8 +27,7 @@ github-dev-metrics --help
 ```bash
 github-dev-metrics \
   --developer octocat \
-  --week 2026-W18 \
-  --output reports/octocat-github-metrics.md
+  --week 05-2026
 ```
 
 Update an existing global install:
@@ -80,8 +79,7 @@ cp .envrc.example .envrc
 github-dev-metrics \
   --developer octocat \
   --from 2026-03-01 \
-  --to 2026-05-31 \
-  --output reports/octocat-github-metrics.md
+  --to 2026-05-31
 ```
 
 You can also use an ISO week shortcut:
@@ -89,8 +87,7 @@ You can also use an ISO week shortcut:
 ```bash
 github-dev-metrics \
   --developer octocat \
-  --week 2026-W18 \
-  --output reports/octocat-github-metrics.md
+  --week 05-2026
 ```
 
 The commit cadence signal is configurable:
@@ -98,7 +95,7 @@ The commit cadence signal is configurable:
 ```bash
 github-dev-metrics \
   --developer octocat \
-  --week 2026-W18 \
+  --week 05-2026 \
   --cadence-target 0.7 \
   --cadence-min-days 4
 ```
@@ -109,11 +106,10 @@ github-dev-metrics \
   --repos example-org/frontend-app,example-org/design-system \
   --from 2026-03-01 \
   --to 2026-05-31 \
-  --format json \
-  --output reports/octocat-github-metrics.json
+  --format json
 ```
 
-If `--output` is omitted, the report is written to stdout.
+If `--output` is omitted, the CLI writes the report to `report/<developer>_<period>.md` or `.json` and prints the written path.
 
 If `--repos` is omitted, the CLI tries to use the current git repository by reading `remote.origin.url`. Supported auto-detected remote formats include:
 
@@ -196,7 +192,7 @@ Recommended token types:
 - “Long time-to-merge” is currently flagged at more than 7 days from PR creation to merge.
 - The built-in `.env` loader is intentionally small and supports simple `KEY=VALUE` lines.
 - If you use `direnv`, you must run `direnv allow` once after creating or changing `.envrc`.
-- `--week` expects ISO week format `YYYY-Www`.
+- `--week` accepts `WW-YYYY` and `YYYY-Www`.
 
 ## Running Tests
 

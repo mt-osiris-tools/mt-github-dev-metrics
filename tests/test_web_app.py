@@ -84,6 +84,9 @@ def test_resolve_period_supports_week() -> None:
     assert week == "2026-W18"
     assert start.startswith("2026-04-27")
     assert end.startswith("2026-05-03")
+    alt_start, alt_end, alt_week = _resolve_period({"week": "18-2026"})
+    assert alt_week == "18-2026"
+    assert (alt_start, alt_end) == (start, end)
 
 
 def test_build_report_payload_returns_renderable_report() -> None:

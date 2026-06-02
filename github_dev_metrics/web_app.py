@@ -408,9 +408,9 @@ HTML_TEMPLATE = """<!doctype html>
             </div>
             <div class="row">
               <div>
-                <label for="week">ISO Week</label>
-                <input id="week" name="week" placeholder="2026-W18">
-                <div class="field-hint">Use ISO week format like <code>2026-W18</code>.</div>
+                <label for="week">Week</label>
+                <input id="week" name="week" placeholder="05-2026">
+                <div class="field-hint">Use <code>05-2026</code> or <code>2026-W05</code>.</div>
               </div>
               <div>
                 <label for="format">Output</label>

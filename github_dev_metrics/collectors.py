@@ -56,23 +56,28 @@ def end_of_day(value: datetime) -> datetime:
 
 def parse_iso_week(value: str) -> tuple[datetime, datetime]:
     parts = value.split("-")
-    if len(parts) != 2 or not parts[0].isdigit():
+    if len(parts) != 2:
         raise ValueError(
-            f"Invalid week format '{value}'. Use YYYY-Www, for example 2026-W18."
+            f"Invalid week format '{value}'. Use WW-YYYY or YYYY-Www, for example 05-2026 or 2026-W05."
         )
-    year = int(parts[0])
-    week_part = parts[1]
-    if not week_part.startswith("W") or not week_part[1:].isdigit():
+
+    if parts[0].isdigit() and len(parts[0]) == 4 and parts[1].startswith("W") and parts[1][1:].isdigit():
+        year = int(parts[0])
+        week = int(parts[1][1:])
+    elif parts[0].isdigit() and parts[1].isdigit() and len(parts[1]) == 4:
+        week = int(parts[0])
+        year = int(parts[1])
+    else:
         raise ValueError(
-            f"Invalid week format '{value}'. Use YYYY-Www, for example 2026-W18."
+            f"Invalid week format '{value}'. Use WW-YYYY or YYYY-Www, for example 05-2026 or 2026-W05."
         )
-    week = int(week_part[1:])
+
     try:
         start = date.fromisocalendar(year, week, 1)
         end = date.fromisocalendar(year, week, 7)
     except ValueError as exc:
         raise ValueError(
-            f"Invalid week value '{value}'. Use a valid ISO week like 2026-W18."
+            f"Invalid week value '{value}'. Use a valid ISO week like 05-2026 or 2026-W05."
         ) from exc
     start_dt = datetime.combine(start, datetime.min.time(), tzinfo=timezone.utc)
     end_dt = datetime.combine(end, datetime.max.time().replace(microsecond=0), tzinfo=timezone.utc)
