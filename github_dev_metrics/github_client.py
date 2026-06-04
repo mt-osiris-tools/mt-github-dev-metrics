@@ -147,6 +147,19 @@ class GithubClient:
             },
         )
 
+    def list_org_repos(self, org: str, include_archived: bool = False) -> list[RepoRef]:
+        payload = self.paginate(f"/orgs/{org}/repos", params={"type": "all", "sort": "full_name", "direction": "asc"})
+        repos: list[RepoRef] = []
+        for item in payload:
+            owner = str(item.get("owner", {}).get("login", "")).strip()
+            name = str(item.get("name", "")).strip()
+            if not owner or not name:
+                continue
+            if not include_archived and bool(item.get("archived")):
+                continue
+            repos.append(RepoRef(owner=owner, name=name))
+        return repos
+
     def search_issues(self, query: str) -> list[Any]:
         payload = self.get_json("/search/issues", params={"q": query, "per_page": 100})
         if isinstance(payload, dict):

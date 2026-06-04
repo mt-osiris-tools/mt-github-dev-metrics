@@ -6,6 +6,7 @@ import re
 import subprocess
 import sys
 from pathlib import Path
+from typing import Callable
 
 from .collectors import (
     collect_metrics,
@@ -105,7 +106,31 @@ def _detect_repo_from_git(start_dir: Path | None = None) -> str | None:
     return _parse_github_remote(remote_url)
 
 
-def _resolve_repos(repos_arg: str | None, org: str | None, start_dir: Path | None = None) -> list[str]:
+def _discover_org_repos(
+    client: GithubClient,
+    org: str,
+    progress: Callable[[str], None] | None = None,
+) -> list[str]:
+    if progress is not None:
+        progress(f"Discovering repositories in {org}...")
+    repo_refs = client.list_org_repos(org)
+    repos = [repo.full_name for repo in repo_refs]
+    if not repos:
+        raise ValueError(
+            f"No accessible non-archived repositories were found in GitHub organization '{org}'."
+        )
+    if progress is not None:
+        progress(f"Discovered {len(repos)} repositories in {org}.")
+    return repos
+
+
+def _resolve_repos(
+    repos_arg: str | None,
+    org: str | None,
+    client: GithubClient | None = None,
+    start_dir: Path | None = None,
+    progress: Callable[[str], None] | None = None,
+) -> list[str]:
     if repos_arg:
         repos = [repo.strip() for repo in repos_arg.split(",") if repo.strip()]
         if not repos:
@@ -117,9 +142,15 @@ def _resolve_repos(repos_arg: str | None, org: str | None, start_dir: Path | Non
     if detected_repo:
         return [detected_repo]
 
+    if org:
+        if client is None:
+            raise ValueError("GitHub client is required for organization repository discovery.")
+        return _discover_org_repos(client, org, progress=progress)
+
     raise ValueError(
         "Unable to determine repositories automatically. Run inside a git repository with a GitHub "
-        "'origin' remote or provide --repos explicitly."
+        "'origin' remote, provide --repos explicitly, or pass --org to scan accessible repositories "
+        "in that GitHub organization."
     )
 
 
@@ -178,10 +209,13 @@ def build_parser() -> argparse.ArgumentParser:
         description="Collect GitHub developer metrics for a specified date range and repository list.",
     )
     parser.add_argument("--developer", required=True, help="GitHub username to analyze.")
-    parser.add_argument("--org", help="Default organization for repository names without an owner.")
+    parser.add_argument(
+        "--org",
+        help="Default organization for bare repo names, and the org-wide fallback scope when --repos is omitted outside a git repo.",
+    )
     parser.add_argument(
         "--repos",
-        help="Comma-separated list of repositories, either repo names or owner/repo values. Defaults to the current git repo when available.",
+        help="Comma-separated list of repositories, either repo names or owner/repo values. Defaults to the current git repo when available, otherwise falls back to --org outside a git repo.",
     )
     parser.add_argument(
         "--from",
@@ -250,8 +284,8 @@ def main(argv: list[str] | None = None) -> int:
             raise ValueError("--cadence-target must be a fraction between 0 and 1.")
         if args.cadence_min_days < 1:
             raise ValueError("--cadence-min-days must be at least 1.")
-        repos = _resolve_repos(args.repos, args.org)
         client = GithubClient.from_env()
+        repos = _resolve_repos(args.repos, args.org, client=client, progress=_emit_progress)
         _emit_progress("Collecting GitHub activity...")
         metrics = collect_metrics(
             client,

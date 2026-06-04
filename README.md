@@ -4,6 +4,8 @@
 
 When you run it inside a git repository, it can infer the current GitHub repository from the local `origin` remote. In that mode, the only required inputs are the developer plus either a week or a from/to date range, and the CLI writes a Markdown report into `report/` by default unless you pass `--format json`.
 
+If you run it outside a git repository and omit `--repos`, pass `--org` to scan the accessible non-archived repositories in that GitHub organization.
+
 ## Requirements
 
 - `python3` 3.11 or newer
@@ -28,6 +30,15 @@ github-dev-metrics --help
 github-dev-metrics \
   --developer octocat \
   --week 05-2026
+```
+
+Outside a repository, use `--org` for org-wide collection:
+
+```bash
+github-dev-metrics \
+  --developer octocat \
+  --week 05-2026 \
+  --org example-org
 ```
 
 Update an existing global install:
@@ -111,13 +122,13 @@ github-dev-metrics \
 
 If `--output` is omitted, the CLI writes the report to `report/<developer>_<period>.md` or `.json` and prints the written path.
 
-If `--repos` is omitted, the CLI tries to use the current git repository by reading `remote.origin.url`. Supported auto-detected remote formats include:
+If `--repos` is omitted, the CLI first tries to use the current git repository by reading `remote.origin.url`. Supported auto-detected remote formats include:
 
 - `git@github.com:owner/repo.git`
 - `https://github.com/owner/repo.git`
 - `ssh://git@github.com/owner/repo.git`
 
-If auto-detection is not possible, pass `--repos` explicitly.
+If auto-detection is not possible, pass `--repos` explicitly or provide `--org` to scan the accessible non-archived repositories in that organization.
 
 Run `github-dev-metrics --help` to see all supported options.
 
@@ -181,7 +192,7 @@ The tool uses the GitHub REST API. The token should have enough access to read t
 
 Recommended token types:
 
-- Fine-grained personal access token with read access to the selected repositories
+- Fine-grained personal access token with read access to the selected repositories or organization repositories you want to scan
 - Classic personal access token with `repo` scope for private repositories
 
 ## Known Limitations
@@ -193,6 +204,7 @@ Recommended token types:
 - The built-in `.env` loader is intentionally small and supports simple `KEY=VALUE` lines.
 - If you use `direnv`, you must run `direnv allow` once after creating or changing `.envrc`.
 - `--week` accepts `WW-YYYY` and `YYYY-Www`.
+- Org-wide mode only includes repositories visible to the token and can take noticeably longer on large organizations.
 
 ## Running Tests
 
