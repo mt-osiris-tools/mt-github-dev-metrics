@@ -48,11 +48,25 @@ def test_markdown_report_generation() -> None:
         commits=[
             CommitRecord(
                 repo="my-org/frontend-app",
-                sha="a1",
+                sha="a1b2c3d4",
                 message="WIP add banner",
                 url="https://github.com/my-org/frontend-app/commit/a1",
                 authored_at="2026-03-10T10:00:00Z",
-            )
+            ),
+            CommitRecord(
+                repo="my-org/design-system",
+                sha="b2c3d4e5",
+                message="Refine tokens",
+                url="https://github.com/my-org/design-system/commit/b2",
+                authored_at="2026-03-11T09:00:00Z",
+            ),
+            CommitRecord(
+                repo="my-org/frontend-app",
+                sha="c3d4e5f6",
+                message="Fallback formatting commit",
+                url=None,
+                authored_at=None,
+            ),
         ],
     )
 
@@ -61,7 +75,14 @@ def test_markdown_report_generation() -> None:
     assert "# GitHub Developer Metrics - alan" in rendered
     assert "## Executive Summary" in rendered
     assert "PRs opened | 1" in rendered
+    assert "## Commit Evidence" in rendered
     assert "## Commit Cadence Evidence" in rendered
     assert "## Pull Request Evidence" in rendered
     assert "my-org/frontend-app#42" in rendered
+    assert "**2026-03-11T09:00:00Z** `my-org/design-system` `b2c3d4e` Refine tokens" in rendered
+    assert "(https://github.com/my-org/design-system/commit/b2)" in rendered
+    assert "**-** `my-org/frontend-app` `c3d4e5f` Fallback formatting commit" in rendered
+    commit_section = rendered.split("## Commit Evidence", 1)[1].split("## Commit Cadence Evidence", 1)[0]
+    assert commit_section.index("Refine tokens") < commit_section.index("WIP add banner")
+    assert commit_section.index("WIP add banner") < commit_section.index("Fallback formatting commit")
     assert "## Suggested Follow-up Questions for a 1:1" in rendered

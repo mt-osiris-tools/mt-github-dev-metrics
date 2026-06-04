@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from .models import DeveloperMetrics, PullRequestRecord
+from .models import CommitRecord, DeveloperMetrics, PullRequestRecord
 
 
 def _fmt_number(value: float | int | None) -> str:
@@ -17,6 +17,21 @@ def _fmt_number(value: float | int | None) -> str:
 
 def _fmt_date(value: str | None) -> str:
     return value or "-"
+
+
+def _commit_sort_key(commit: CommitRecord) -> tuple[str, str, str]:
+    authored_at = commit.authored_at or ""
+    return (authored_at, commit.repo, commit.sha)
+
+
+def _commit_line(commit: CommitRecord) -> str:
+    short_sha = commit.sha[:7] if commit.sha else "-"
+    line = (
+        f"- **{_fmt_date(commit.authored_at)}** `{commit.repo}` `{short_sha}` {commit.message or '-'}"
+    )
+    if commit.url:
+        line += f" ({commit.url})"
+    return line
 
 
 def fmt_cadence(cadence: dict[str, Any]) -> str:
@@ -56,6 +71,7 @@ def _pr_line(pr: PullRequestRecord, metrics: dict[str, Any]) -> str:
 def render_markdown_report(data: DeveloperMetrics) -> str:
     metrics = data.metrics
     prs = data.prs
+    commits = data.commits
     lines: list[str] = []
     lines.append(f"# GitHub Developer Metrics - {data.developer}")
     lines.append("")
@@ -129,6 +145,13 @@ def render_markdown_report(data: DeveloperMetrics) -> str:
         lines.append("- No noisy commit messages were detected in matching PRs.")
     if commit_activity.get("revert_commits"):
         lines.append(f"- Revert commits: {', '.join(commit_activity['revert_commits'])}")
+    lines.append("")
+    lines.append("## Commit Evidence")
+    if commits:
+        for commit in sorted(commits, key=_commit_sort_key, reverse=True):
+            lines.append(_commit_line(commit))
+    else:
+        lines.append("- No authored commits matched the selection.")
     lines.append("")
     lines.append("## Commit Cadence Evidence")
     if cadence:
