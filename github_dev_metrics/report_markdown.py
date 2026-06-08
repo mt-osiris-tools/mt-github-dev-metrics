@@ -72,6 +72,7 @@ def render_markdown_report(data: DeveloperMetrics) -> str:
     metrics = data.metrics
     prs = data.prs
     commits = data.commits
+    contributions = metrics.get("developer_contributions", {})
     lines: list[str] = []
     lines.append(f"# GitHub Developer Metrics - {data.developer}")
     lines.append("")
@@ -101,12 +102,43 @@ def render_markdown_report(data: DeveloperMetrics) -> str:
             f"| PRs opened | {_fmt_number(pull_requests.get('opened', 0))} |",
             f"| PRs merged | {_fmt_number(pull_requests.get('merged', 0))} |",
             f"| Commits authored | {_fmt_number(commit_activity.get('authored_commits', 0))} |",
+            f"| Reviews submitted | {_fmt_number(contributions.get('reviews_submitted', 0))} |",
+            f"| Review comments | {_fmt_number(contributions.get('review_comments', 0))} |",
+            f"| Repositories contributed to | {_fmt_number(contributions.get('repo_count', 0))} |",
             f"| Commit cadence | {fmt_cadence(cadence)} |",
             f"| PRs with tests | {_fmt_number(testing.get('prs_with_tests', 0))} |",
             f"| PRs without tests | {_fmt_number(testing.get('prs_without_tests', 0))} |",
             f"| PRs with requested changes | {_fmt_number(pull_requests.get('requested_changes', 0))} |",
             f"| PRs with noisy commits | {_fmt_number(len(git_hygiene.get('prs_with_noisy_commits', [])))} |",
         ]
+    )
+    lines.append("")
+    lines.append("## Developer Contributions")
+    lines.append(
+        "This section aggregates authored delivery and collaboration signals so the report shows both shipped work and contribution to other engineers' work."
+    )
+    lines.append("")
+    lines.append("| Contribution Signal | Value |")
+    lines.append("|---|---:|")
+    mix = contributions.get("contribution_mix", {})
+    lines.extend(
+        [
+            f"| Authored PRs | {_fmt_number(contributions.get('authored_prs', 0))} |",
+            f"| Merged PRs | {_fmt_number(contributions.get('merged_prs', 0))} |",
+            f"| Authored commits | {_fmt_number(contributions.get('authored_commits', 0))} |",
+            f"| Reviews submitted | {_fmt_number(contributions.get('reviews_submitted', 0))} |",
+            f"| Review comments | {_fmt_number(contributions.get('review_comments', 0))} |",
+            f"| Total contribution events | {_fmt_number(contributions.get('total_contribution_events', 0))} |",
+        ]
+    )
+    repos_contributed = contributions.get("repos_contributed_to", [])
+    lines.append("")
+    lines.append(
+        f"- Repositories contributed to ({_fmt_number(contributions.get('repo_count', 0))}): "
+        + (", ".join(repos_contributed) if repos_contributed else "None")
+    )
+    lines.append(
+        f"- Contribution mix: PRs {_fmt_number(mix.get('pull_requests', 0))}, commits {_fmt_number(mix.get('commits', 0))}, reviews {_fmt_number(mix.get('reviews', 0))}, review comments {_fmt_number(mix.get('review_comments', 0))}"
     )
     lines.append("")
     lines.append("## Positive Signals")

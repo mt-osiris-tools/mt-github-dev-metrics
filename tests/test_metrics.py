@@ -111,6 +111,22 @@ def test_pr_metrics_calculation() -> None:
     assert calculated.metrics["commit_activity"]["authored_commits"] == 1
     assert calculated.metrics["git_hygiene"]["prs_with_noisy_commits"]
     assert calculated.metrics["review_participation"]["submitted_reviews"] == 0
+    assert calculated.metrics["developer_contributions"] == {
+        "authored_prs": 2,
+        "merged_prs": 1,
+        "authored_commits": 1,
+        "reviews_submitted": 0,
+        "review_comments": 0,
+        "repos_contributed_to": ["my-org/design-system", "my-org/frontend-app"],
+        "repo_count": 2,
+        "total_contribution_events": 3,
+        "contribution_mix": {
+            "pull_requests": 2,
+            "commits": 1,
+            "reviews": 0,
+            "review_comments": 0,
+        },
+    }
     assert calculated.summary.positive_signals
     assert calculated.summary.opportunity_signals
 

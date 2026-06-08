@@ -108,4 +108,21 @@ def test_build_report_payload_returns_renderable_report() -> None:
     assert "GitHub Developer Metrics - alan" in payload["markdown"]
     assert payload["metrics"]["pull_requests"]["opened"] == 1
     assert payload["metrics"]["commit_activity"]["cadence"]["has_almost_daily_cadence"] is True
+    assert payload["metrics"]["developer_contributions"] == {
+        "authored_prs": 1,
+        "merged_prs": 1,
+        "authored_commits": 5,
+        "reviews_submitted": 0,
+        "review_comments": 0,
+        "repos_contributed_to": ["example-org/frontend-app"],
+        "repo_count": 1,
+        "total_contribution_events": 6,
+        "contribution_mix": {
+            "pull_requests": 1,
+            "commits": 5,
+            "reviews": 0,
+            "review_comments": 0,
+        },
+    }
+    assert "## Developer Contributions" in payload["markdown"]
     assert payload["json"]["developer"] == "alan"

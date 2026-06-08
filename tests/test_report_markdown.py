@@ -75,6 +75,11 @@ def test_markdown_report_generation() -> None:
     assert "# GitHub Developer Metrics - alan" in rendered
     assert "## Executive Summary" in rendered
     assert "PRs opened | 1" in rendered
+    assert "## Developer Contributions" in rendered
+    assert "Reviews submitted | 0" in rendered
+    assert "Repositories contributed to | 2" in rendered
+    assert "Total contribution events | 4" in rendered
+    assert "Contribution mix: PRs 1, commits 3, reviews 0, review comments 0" in rendered
     assert "## Commit Evidence" in rendered
     assert "## Commit Cadence Evidence" in rendered
     assert "## Pull Request Evidence" in rendered

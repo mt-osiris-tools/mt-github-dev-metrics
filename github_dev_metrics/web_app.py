@@ -623,6 +623,7 @@ HTML_TEMPLATE = """<!doctype html>
       const gitHygiene = metrics.git_hygiene || {};
       const commitActivity = metrics.commit_activity || {};
       const reviewParticipation = metrics.review_participation || {};
+      const contributions = metrics.developer_contributions || {};
       const summary = report.summary || {};
       const cadence = commitActivity.cadence || {};
       const prsOpened = Number(pullRequests.opened || 0);
@@ -634,6 +635,7 @@ HTML_TEMPLATE = """<!doctype html>
       const noisyPrs = Number(gitHygiene.prs_with_noisy_commits?.length || 0);
       const reviewComments = Number(reviewParticipation.review_comments || 0);
       const reviewSubmissions = Number(reviewParticipation.submitted_reviews || 0);
+      const contributionEvents = Number(contributions.total_contribution_events || 0);
       const cadencePct = Math.round(Number(cadence.coverage_ratio || 0) * 100);
       const testCoveragePercent = percent(prsWithTests, prsOpened);
       const reviewFriction = requestedChanges + noisyPrs + reviewComments;
@@ -643,6 +645,7 @@ HTML_TEMPLATE = """<!doctype html>
       return `
         ${renderSidebarStat('PRs opened', fmtNumber(prsOpened), `${fmtNumber(prsMerged)} merged`)}
         ${renderSidebarStat('Open PRs', fmtNumber(prsOpen), `${fmtNumber(prsWithTests)} with tests`)}
+        ${renderSidebarStat('Contributions', fmtNumber(contributionEvents), `${fmtNumber(contributions.repo_count || 0)} repos`)}
         ${renderSidebarStat('Test coverage', `${fmtNumber(testCoveragePercent)}%`, `${fmtNumber(prsWithoutTests)} without tests`)}
         ${renderSidebarStat('Risk', fmtNumber(reviewFriction), `${fmtNumber(noisyPrs)} noisy PRs`)}
       `;
@@ -655,6 +658,7 @@ HTML_TEMPLATE = """<!doctype html>
       const gitHygiene = metrics.git_hygiene || {};
       const commitActivity = metrics.commit_activity || {};
       const reviewParticipation = metrics.review_participation || {};
+      const contributions = metrics.developer_contributions || {};
       const summary = report.summary || {};
       const cadence = commitActivity.cadence || {};
       const prsOpened = Number(pullRequests.opened || 0);
@@ -666,6 +670,7 @@ HTML_TEMPLATE = """<!doctype html>
       const noisyPrs = Number(gitHygiene.prs_with_noisy_commits?.length || 0);
       const reviewComments = Number(reviewParticipation.review_comments || 0);
       const reviewSubmissions = Number(reviewParticipation.submitted_reviews || 0);
+      const contributionEvents = Number(contributions.total_contribution_events || 0);
       const cadencePct = Math.round(Number(cadence.coverage_ratio || 0) * 100);
       const testCoveragePercent = percent(prsWithTests, prsOpened);
       const reviewFriction = requestedChanges + noisyPrs + reviewComments;
@@ -685,6 +690,7 @@ HTML_TEMPLATE = """<!doctype html>
             <div class="dashboard-kpi-grid">
               ${renderDashboardKpi('PRs opened', fmtNumber(prsOpened), `${fmtNumber(prsMerged)} merged`, prsOpen ? 'warn' : 'good')}
               ${renderDashboardKpi('Open PRs', fmtNumber(prsOpen), `${fmtNumber(reviewSubmissions)} reviews submitted`, prsOpen ? 'warn' : 'good')}
+              ${renderDashboardKpi('Contributions', fmtNumber(contributionEvents), `${fmtNumber(contributions.repo_count || 0)} repos`, contributionEvents ? 'good' : 'neutral')}
               ${renderDashboardKpi('Test coverage', `${fmtNumber(testCoveragePercent)}%`, `${fmtNumber(prsWithoutTests)} without tests`, testCoveragePercent >= 70 ? 'good' : testCoveragePercent >= 40 ? 'warn' : 'risk')}
               ${renderDashboardKpi('Review friction', fmtNumber(reviewFriction), `${fmtNumber(noisyPrs)} noisy PRs`, reviewFriction >= 4 ? 'risk' : reviewFriction >= 2 ? 'warn' : 'good')}
             </div>
@@ -909,6 +915,7 @@ HTML_TEMPLATE = """<!doctype html>
       const gitHygiene = metrics.git_hygiene || {};
       const commitActivity = metrics.commit_activity || {};
       const reviewParticipation = metrics.review_participation || {};
+      const contributions = metrics.developer_contributions || {};
       const prs = report.prs || [];
       const summary = report.summary || {};
       const cadence = commitActivity.cadence || {};
@@ -920,6 +927,9 @@ HTML_TEMPLATE = """<!doctype html>
       const requestedChanges = Number(pullRequests.requested_changes || 0);
       const reviewComments = Number(reviewParticipation.review_comments || 0);
       const reviewSubmissions = Number(reviewParticipation.submitted_reviews || 0);
+      const contributionEvents = Number(contributions.total_contribution_events || 0);
+      const contributionMix = contributions.contribution_mix || {};
+      const contributedRepos = contributions.repos_contributed_to || [];
       const testCoveragePercent = percent(prsWithTests, prsOpened);
       const reviewFriction = requestedChanges + noisyPrs + reviewComments;
       const cadencePct = Math.round((Number(cadence.coverage_ratio || 0) * 100));
@@ -961,6 +971,7 @@ HTML_TEMPLATE = """<!doctype html>
                 <div class="toc-links">
                   <a href="#detail-summary"><span>Summary</span><span class="toc-count">${fmtNumber(prsOpened)} PRs</span></a>
                   <a href="#detail-metrics"><span>Metrics overview</span><span class="toc-count">${fmtNumber(prsMerged)} merged</span></a>
+                  <a href="#detail-contributions"><span>Developer contributions</span><span class="toc-count">${fmtNumber(contributionEvents)} events</span></a>
                   <a href="#detail-prs"><span>Pull request evidence</span><span class="toc-count">${fmtNumber(prs.length)} items</span></a>
                   <a href="#detail-testing"><span>Testing evidence</span><span class="toc-count">${fmtNumber(prsWithTests)} with tests</span></a>
                   <a href="#detail-cadence"><span>Commit cadence</span><span class="toc-count">${fmtNumber(cadence.active_days || 0)}/${fmtNumber(cadence.period_days || 0)}</span></a>
@@ -996,6 +1007,41 @@ HTML_TEMPLATE = """<!doctype html>
             <div class="detail-metric"><div class="label">PRs merged</div><div class="value">${fmtNumber(pullRequests.merged)}</div></div>
             <div class="detail-metric"><div class="label">Commits</div><div class="value">${fmtNumber(commitActivity.authored_commits)}</div></div>
             <div class="detail-metric"><div class="label">Tests touched</div><div class="value">${fmtNumber(testing.prs_with_tests)}</div></div>
+          </section>
+
+          <section class="detail-card" id="detail-contributions">
+            <div class="detail-section-title">
+              <h3>Developer Contributions</h3>
+            </div>
+            <div class="summary-columns">
+              <div class="summary-box">
+                <h4>Contribution totals</h4>
+                ${listToHtml([
+                  `Authored PRs: ${fmtNumber(contributions.authored_prs || 0)}`,
+                  `Merged PRs: ${fmtNumber(contributions.merged_prs || 0)}`,
+                  `Authored commits: ${fmtNumber(contributions.authored_commits || 0)}`,
+                  `Reviews submitted: ${fmtNumber(contributions.reviews_submitted || 0)}`,
+                  `Review comments: ${fmtNumber(contributions.review_comments || 0)}`,
+                  `Total contribution events: ${fmtNumber(contributionEvents)}`,
+                ])}
+              </div>
+              <div class="summary-box">
+                <h4>Repo breadth and mix</h4>
+                ${listToHtml([
+                  `Repositories contributed to: ${fmtNumber(contributions.repo_count || 0)}`,
+                  `PRs: ${fmtNumber(contributionMix.pull_requests || 0)}`,
+                  `Commits: ${fmtNumber(contributionMix.commits || 0)}`,
+                  `Reviews: ${fmtNumber(contributionMix.reviews || 0)}`,
+                  `Review comments: ${fmtNumber(contributionMix.review_comments || 0)}`,
+                ])}
+              </div>
+            </div>
+            <div class="detail-list">
+              <div>
+                <div class="field-label">Repositories contributed to</div>
+                <div>${contributedRepos.length ? contributedRepos.map(repo => pill(repo)).join('') : 'No repositories contributed to.'}</div>
+              </div>
+            </div>
           </section>
 
           <section class="detail-card">

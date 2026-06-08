@@ -173,6 +173,24 @@ def calculate_metrics(
         cadence_target,
         cadence_min_active_days,
     )
+    contributed_repos = sorted(
+        {
+            pr.repo for pr in prs
+        }
+        | {
+            commit.repo for commit in commits
+        }
+        | {
+            item.repo for item in data.review_participation
+        }
+    )
+    total_contribution_events = len(prs) + len(commits) + submitted_reviews + review_comments
+    contribution_mix = {
+        "pull_requests": len(prs),
+        "commits": len(commits),
+        "reviews": submitted_reviews,
+        "review_comments": review_comments,
+    }
 
     positive_signals: list[str] = []
     if merged_prs:
@@ -286,6 +304,17 @@ def calculate_metrics(
             "submitted_reviews": submitted_reviews,
             "review_comments": review_comments,
             "items": [item.to_dict() for item in data.review_participation],
+        },
+        "developer_contributions": {
+            "authored_prs": len(prs),
+            "merged_prs": len(merged_prs),
+            "authored_commits": len(commits),
+            "reviews_submitted": submitted_reviews,
+            "review_comments": review_comments,
+            "repos_contributed_to": contributed_repos,
+            "repo_count": len(contributed_repos),
+            "total_contribution_events": total_contribution_events,
+            "contribution_mix": contribution_mix,
         },
         "evidence": {
             "pr_review_states": pr_review_states,
