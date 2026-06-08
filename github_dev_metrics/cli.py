@@ -18,6 +18,7 @@ from .collectors import (
 )
 from .github_client import GithubAPIError, GithubAuthError, GithubClient
 from .metrics import calculate_metrics
+from .report_csv import render_csv_report
 from .report_json import render_json_report
 from .report_markdown import render_markdown_report
 
@@ -181,7 +182,12 @@ def _default_output_path(
     date_to,
     week: str | None = None,
 ) -> Path:
-    extension = "md" if report_format == "markdown" else "json"
+    extension_map = {
+        "markdown": "md",
+        "json": "json",
+        "csv": "csv",
+    }
+    extension = extension_map[report_format]
     if week:
         period = f"week-{_normalize_week_label(week)}"
     else:
@@ -233,7 +239,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--format",
-        choices=("markdown", "json"),
+        choices=("markdown", "json", "csv"),
         default="markdown",
         help="Output format (default: markdown).",
     )
@@ -305,6 +311,8 @@ def main(argv: list[str] | None = None) -> int:
         _emit_progress(f"Rendering {args.format} report...")
         if args.format == "markdown":
             report = render_markdown_report(calculated)
+        elif args.format == "csv":
+            report = render_csv_report(calculated)
         else:
             report = render_json_report(calculated)
         output_path = _resolve_output_path(

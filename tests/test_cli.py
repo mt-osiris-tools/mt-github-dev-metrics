@@ -95,6 +95,12 @@ def test_parser_defaults_to_markdown_format() -> None:
     assert args.format == "markdown"
 
 
+def test_parser_accepts_csv_format() -> None:
+    args = build_parser().parse_args(["--developer", "octocat", "--week", "05-2026", "--format", "csv"])
+
+    assert args.format == "csv"
+
+
 def test_default_output_path_uses_report_directory_for_markdown() -> None:
     path = _default_output_path(
         "octocat",
@@ -116,6 +122,17 @@ def test_default_output_path_uses_json_extension() -> None:
     )
 
     assert path == Path("report/octocat_2026-03-01_to_2026-05-31.json")
+
+
+def test_default_output_path_uses_csv_extension() -> None:
+    path = _default_output_path(
+        "octocat",
+        "csv",
+        datetime(2026, 3, 1, tzinfo=timezone.utc),
+        datetime(2026, 5, 31, tzinfo=timezone.utc),
+    )
+
+    assert path == Path("report/octocat_2026-03-01_to_2026-05-31.csv")
 
 
 def test_resolve_output_path_prefers_explicit_value() -> None:
@@ -156,6 +173,35 @@ def test_main_writes_default_report_file_and_prints_path(
         "Calculating metrics...\n"
         "Rendering markdown report...\n"
         "Writing report to report/octocat_week-05-2026.md...\n"
+    )
+
+
+def test_main_writes_csv_report_file_and_prints_path(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr("github_dev_metrics.cli._load_local_env_file", lambda *args, **kwargs: None)
+    monkeypatch.setattr("github_dev_metrics.cli.GithubClient.from_env", lambda: object())
+    monkeypatch.setattr("github_dev_metrics.cli._resolve_repos", lambda *args, **kwargs: ["example-org/frontend-app"])
+    monkeypatch.setattr("github_dev_metrics.cli.collect_metrics", lambda *args, **kwargs: object())
+    monkeypatch.setattr("github_dev_metrics.cli.calculate_metrics", lambda metrics, **kwargs: metrics)
+    monkeypatch.setattr("github_dev_metrics.cli.render_csv_report", lambda metrics: "repo,pr_number\nexample-org/frontend-app,42\n")
+
+    exit_code = main(["--developer", "octocat", "--week", "05-2026", "--format", "csv"])
+
+    assert exit_code == 0
+    report_path = tmp_path / "report" / "octocat_week-05-2026.csv"
+    assert report_path.read_text(encoding="utf-8") == "repo,pr_number\nexample-org/frontend-app,42\n"
+    captured = capsys.readouterr()
+    assert captured.out == f"Wrote {Path('report/octocat_week-05-2026.csv')}\n"
+    assert captured.err == (
+        "Resolving repositories and GitHub client...\n"
+        "Collecting GitHub activity...\n"
+        "Calculating metrics...\n"
+        "Rendering csv report...\n"
+        "Writing report to report/octocat_week-05-2026.csv...\n"
     )
 
 

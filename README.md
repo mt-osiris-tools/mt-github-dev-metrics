@@ -2,7 +2,7 @@
 
 `github-dev-metrics` is a Python CLI for collecting GitHub activity metrics for a specific developer across one or more repositories. It is intended for developer activity reviews, team health conversations, and engineering retrospectives.
 
-When you run it inside a git repository, it can infer the current GitHub repository from the local `origin` remote. In that mode, the only required inputs are the developer plus either a week or a from/to date range, and the CLI writes a Markdown report into `report/` by default unless you pass `--format json`.
+When you run it inside a git repository, it can infer the current GitHub repository from the local `origin` remote. In that mode, the only required inputs are the developer plus either a week or a from/to date range, and the CLI writes a Markdown report into `report/` by default unless you pass `--format json` or `--format csv`.
 
 If you run it outside a git repository and omit `--repos`, pass `--org` to scan the accessible non-archived repositories in that GitHub organization.
 
@@ -117,10 +117,10 @@ github-dev-metrics \
   --repos example-org/frontend-app,example-org/design-system \
   --from 2026-03-01 \
   --to 2026-05-31 \
-  --format json
+  --format csv
 ```
 
-If `--output` is omitted, the CLI writes the report to `report/<developer>_<period>.md` or `.json` and prints the written path.
+If `--output` is omitted, the CLI writes the report to `report/<developer>_<period>.md`, `.json`, or `.csv` and prints the written path.
 
 If `--repos` is omitted, the CLI first tries to use the current git repository by reading `remote.origin.url`. Supported auto-detected remote formats include:
 
@@ -185,6 +185,12 @@ Report interpretation:
 - Git hygiene evidence
 - Review participation evidence
 - Suggested follow-up questions for a review conversation
+
+CSV export:
+
+- One row per pull request for analytics-friendly ingestion
+- Flattened scalar columns for dates, counts, sizes, and boolean flags
+- Pipe-delimited detail columns for repository lists, test files, and PR commit messages
 
 ## GitHub Token Permissions
 
