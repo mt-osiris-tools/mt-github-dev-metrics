@@ -46,6 +46,26 @@ class FakeGithubClient:
     def list_pull_review_comments(self, repo, number: int):
         return []
 
+    def list_pull_review_threads(self, repo, number: int):
+        return [
+            {
+                "id": "thread-1",
+                "isResolved": False,
+                "resolvedBy": None,
+                "comments": {
+                    "nodes": [
+                        {
+                            "id": "comment-1",
+                            "body": "Need a test",
+                            "createdAt": "2026-05-02T10:00:00Z",
+                            "author": {"login": "reviewer"},
+                            "replyTo": None,
+                        }
+                    ]
+                },
+            }
+        ]
+
     def list_repo_commits(self, repo, author, since, until):
         return [
             {
@@ -107,6 +127,7 @@ def test_build_report_payload_returns_renderable_report() -> None:
     assert payload["week"] == "2026-W18"
     assert "GitHub Developer Metrics - alan" in payload["markdown"]
     assert payload["metrics"]["pull_requests"]["opened"] == 1
+    assert payload["metrics"]["pull_requests"]["unresolved_review_threads_closed"] == 1
     assert payload["metrics"]["commit_activity"]["cadence"]["has_almost_daily_cadence"] is True
     assert payload["metrics"]["developer_contributions"] == {
         "authored_prs": 1,
@@ -125,4 +146,5 @@ def test_build_report_payload_returns_renderable_report() -> None:
         },
     }
     assert "## Developer Contributions" in payload["markdown"]
+    assert payload["json"]["prs"][0]["review_threads"][0]["id"] == "thread-1"
     assert payload["json"]["developer"] == "alan"

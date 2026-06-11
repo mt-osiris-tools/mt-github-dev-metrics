@@ -8,6 +8,8 @@ from github_dev_metrics.models import (
     PullRequestFile,
     PullRequestRecord,
     PullRequestReview,
+    ReviewThread,
+    ReviewThreadComment,
 )
 from github_dev_metrics.report_markdown import render_markdown_report
 
@@ -35,6 +37,20 @@ def test_markdown_report_generation() -> None:
                 changed_files=5,
                 reviews=[
                     PullRequestReview(user="reviewer", state="CHANGES_REQUESTED", submitted_at="2026-03-11T10:00:00Z"),
+                ],
+                review_threads=[
+                    ReviewThread(
+                        id="thread-1",
+                        is_resolved=False,
+                        comments=[
+                            ReviewThreadComment(
+                                id="comment-1",
+                                author="reviewer",
+                                body="Please add coverage",
+                                created_at="2026-03-11T09:00:00Z",
+                            )
+                        ],
+                    )
                 ],
                 files=[
                     PullRequestFile(filename="src/app.ts", additions=100, deletions=20, changes=120),
@@ -77,6 +93,7 @@ def test_markdown_report_generation() -> None:
     assert "PRs opened | 1" in rendered
     assert "## Developer Contributions" in rendered
     assert "Reviews submitted | 0" in rendered
+    assert "Unresolved review threads on closed PRs | 1" in rendered
     assert "Repositories contributed to | 2" in rendered
     assert "Total contribution events | 4" in rendered
     assert "Contribution mix: PRs 1, commits 3, reviews 0, review comments 0" in rendered
@@ -84,6 +101,8 @@ def test_markdown_report_generation() -> None:
     assert "## Commit Cadence Evidence" in rendered
     assert "## Pull Request Evidence" in rendered
     assert "my-org/frontend-app#42" in rendered
+    assert "Unresolved review threads at close: 1" in rendered
+    assert "1 comment(s) from reviewer" in rendered
     assert "**2026-03-11T09:00:00Z** `my-org/design-system` `b2c3d4e` Refine tokens" in rendered
     assert "(https://github.com/my-org/design-system/commit/b2)" in rendered
     assert "**-** `my-org/frontend-app` `c3d4e5f` Fallback formatting commit" in rendered

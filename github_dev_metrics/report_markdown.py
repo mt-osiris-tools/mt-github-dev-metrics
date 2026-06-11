@@ -44,9 +44,21 @@ def fmt_cadence(cadence: dict[str, Any]) -> str:
     return f"{active_days}/{period_days} days ({coverage_ratio}%) - {marker}"
 
 
+def _fmt_unresolved_thread_details(details: list[dict[str, Any]]) -> str:
+    if not details:
+        return "None"
+    formatted: list[str] = []
+    for detail in details:
+        participants = ", ".join(detail.get("participants", [])) or "unknown participants"
+        formatted.append(f"{detail.get('comment_count', 0)} comment(s) from {participants}")
+    return "; ".join(formatted)
+
+
 def _pr_line(pr: PullRequestRecord, metrics: dict[str, Any]) -> str:
     key = f"{pr.repo}#{pr.number}"
     review_states = metrics.get("evidence", {}).get("pr_review_states", {}).get(key, {})
+    unresolved_threads = metrics.get("evidence", {}).get("pr_unresolved_review_threads", {}).get(key, 0)
+    unresolved_thread_details = metrics.get("evidence", {}).get("pr_unresolved_review_thread_details", {}).get(key, [])
     noisy = metrics.get("git_hygiene", {}).get("prs_with_noisy_commits", [])
     noisy_messages = next((item["messages"] for item in noisy if item["repo"] == pr.repo and item["number"] == pr.number), [])
     test_files = metrics.get("testing", {}).get("pr_test_files", {}).get(key, [])
@@ -63,6 +75,8 @@ def _pr_line(pr: PullRequestRecord, metrics: dict[str, Any]) -> str:
         f"  - Time to merge (days): {_fmt_number(time_to_merge)}\n"
         f"  - Review states: {review_states or '{}'}\n"
         f"  - Review iterations: {review_iterations}\n"
+        f"  - Unresolved review threads at close: {_fmt_number(unresolved_threads)}\n"
+        f"  - Unresolved review thread details: {_fmt_unresolved_thread_details(unresolved_thread_details)}\n"
         f"  - Test files touched: {', '.join(test_files) if test_files else 'No'}\n"
         f"  - Noisy commit messages: {', '.join(noisy_messages) if noisy_messages else 'No'}"
     )
@@ -109,6 +123,7 @@ def render_markdown_report(data: DeveloperMetrics) -> str:
             f"| PRs with tests | {_fmt_number(testing.get('prs_with_tests', 0))} |",
             f"| PRs without tests | {_fmt_number(testing.get('prs_without_tests', 0))} |",
             f"| PRs with requested changes | {_fmt_number(pull_requests.get('requested_changes', 0))} |",
+            f"| Unresolved review threads on closed PRs | {_fmt_number(pull_requests.get('unresolved_review_threads_closed', 0))} |",
             f"| PRs with noisy commits | {_fmt_number(len(git_hygiene.get('prs_with_noisy_commits', [])))} |",
         ]
     )

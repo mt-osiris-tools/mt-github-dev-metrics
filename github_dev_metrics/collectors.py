@@ -14,6 +14,8 @@ from .models import (
     PullRequestFile,
     PullRequestRecord,
     PullRequestReview,
+    ReviewThread,
+    ReviewThreadComment,
     RepoRef,
     ReviewParticipationRecord,
 )
@@ -177,6 +179,33 @@ def _pull_review_records(client: GithubClient, repo: RepoRef, number: int, devel
     return reviews, review_comments
 
 
+def _pull_review_threads(client: GithubClient, repo: RepoRef, number: int) -> list[ReviewThread]:
+    threads_raw = client.list_pull_review_threads(repo, number)
+    threads: list[ReviewThread] = []
+    for thread in threads_raw:
+        comments_raw = thread.get("comments", {}).get("nodes", [])
+        comments = [
+            ReviewThreadComment(
+                id=str(comment.get("id", "")),
+                author=str(comment.get("author", {}).get("login", "")),
+                body=comment.get("body"),
+                created_at=comment.get("createdAt"),
+                is_reply=bool(comment.get("replyTo")),
+            )
+            for comment in comments_raw
+            if isinstance(comment, dict)
+        ]
+        threads.append(
+            ReviewThread(
+                id=str(thread.get("id", "")),
+                is_resolved=bool(thread.get("isResolved")),
+                resolved_by=thread.get("resolvedBy", {}).get("login") if thread.get("resolvedBy") else None,
+                comments=comments,
+            )
+        )
+    return threads
+
+
 def collect_metrics(
     client: GithubClient,
     developer: str,
@@ -191,6 +220,7 @@ def collect_metrics(
     commit_records: list[CommitRecord] = []
     review_participation: list[ReviewParticipationRecord] = []
     limitations: list[str] = []
+    review_thread_limitation_added = False
 
     for index, repo in enumerate(repo_refs, start=1):
         if progress is not None:
@@ -206,6 +236,15 @@ def collect_metrics(
             files_raw = client.list_pull_files(repo, number)
             commits_raw = client.list_pull_commits(repo, number)
             reviews, review_comments = _pull_review_records(client, repo, number, developer)
+            review_threads: list[ReviewThread] = []
+            try:
+                review_threads = _pull_review_threads(client, repo, number)
+            except GithubError:
+                if not review_thread_limitation_added:
+                    limitations.append(
+                        "Review thread resolution is best-effort; GitHub GraphQL access or visibility constraints may hide unresolved threads."
+                    )
+                    review_thread_limitation_added = True
             files = [
                 PullRequestFile(
                     filename=str(item.get("filename", "")),
@@ -241,6 +280,7 @@ def collect_metrics(
                     changed_files=int(detailed.get("changed_files", len(files)) or 0),
                     reviews=reviews,
                     review_comments=review_comments,
+                    review_threads=review_threads,
                     files=files,
                     commits=commits,
                     merged_by=detailed.get("merged_by", {}).get("login") if detailed.get("merged_by") else None,

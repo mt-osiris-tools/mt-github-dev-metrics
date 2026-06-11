@@ -8,6 +8,8 @@ from github_dev_metrics.models import (
     PullRequestFile,
     PullRequestRecord,
     PullRequestReview,
+    ReviewThread,
+    ReviewThreadComment,
     ReviewParticipationRecord,
 )
 
@@ -51,6 +53,20 @@ def test_pr_metrics_calculation() -> None:
                 reviews=[
                     PullRequestReview(user="reviewer", state="CHANGES_REQUESTED", submitted_at="2026-03-11T10:00:00Z"),
                     PullRequestReview(user="reviewer", state="APPROVED", submitted_at="2026-03-12T10:00:00Z"),
+                ],
+                review_threads=[
+                    ReviewThread(
+                        id="thread-1",
+                        is_resolved=False,
+                        comments=[
+                            ReviewThreadComment(
+                                id="comment-1",
+                                author="reviewer",
+                                body="Please add a test",
+                                created_at="2026-03-11T09:00:00Z",
+                            )
+                        ],
+                    )
                 ],
                 files=[
                     PullRequestFile(filename="src/app.ts", additions=100, deletions=20, changes=120),
@@ -107,6 +123,8 @@ def test_pr_metrics_calculation() -> None:
     assert calculated.metrics["pull_requests"]["merged"] == 1
     assert calculated.metrics["pull_requests"]["requested_changes"] == 1
     assert calculated.metrics["pull_requests"]["with_tests"] == 1
+    assert calculated.metrics["pull_requests"]["unresolved_review_threads_closed"] == 1
+    assert calculated.metrics["pull_requests"]["prs_with_unresolved_review_threads_closed"] == 1
     assert calculated.metrics["testing"]["prs_without_tests"] == 1
     assert calculated.metrics["commit_activity"]["authored_commits"] == 1
     assert calculated.metrics["git_hygiene"]["prs_with_noisy_commits"]
@@ -129,6 +147,7 @@ def test_pr_metrics_calculation() -> None:
     }
     assert calculated.summary.positive_signals
     assert calculated.summary.opportunity_signals
+    assert any("unresolved review thread" in signal for signal in calculated.summary.opportunity_signals)
 
 
 def test_commit_cadence_flags_almost_daily_pattern() -> None:

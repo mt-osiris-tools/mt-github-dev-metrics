@@ -53,6 +53,34 @@ class PullRequestReview:
 
 
 @dataclass
+class ReviewThreadComment:
+    id: str
+    author: str
+    body: str | None = None
+    created_at: str | None = None
+    is_reply: bool = False
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
+@dataclass
+class ReviewThread:
+    id: str
+    is_resolved: bool
+    resolved_by: str | None = None
+    comments: list[ReviewThreadComment] = field(default_factory=list)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "id": self.id,
+            "is_resolved": self.is_resolved,
+            "resolved_by": self.resolved_by,
+            "comments": [comment.to_dict() for comment in self.comments],
+        }
+
+
+@dataclass
 class PullRequestCommit:
     sha: str
     message: str
@@ -79,6 +107,7 @@ class PullRequestRecord:
     changed_files: int
     reviews: list[PullRequestReview] = field(default_factory=list)
     review_comments: list[dict[str, Any]] = field(default_factory=list)
+    review_threads: list[ReviewThread] = field(default_factory=list)
     files: list[PullRequestFile] = field(default_factory=list)
     commits: list[PullRequestCommit] = field(default_factory=list)
     merged_by: str | None = None
@@ -100,6 +129,7 @@ class PullRequestRecord:
             "merged_by": self.merged_by,
             "reviews": [review.to_dict() for review in self.reviews],
             "review_comments": self.review_comments,
+            "review_threads": [thread.to_dict() for thread in self.review_threads],
             "files": [file.to_dict() for file in self.files],
             "commits": [commit.to_dict() for commit in self.commits],
         }
@@ -176,4 +206,3 @@ class DeveloperMetrics:
             "metrics": self.metrics,
             "limitations": self.limitations,
         }
-

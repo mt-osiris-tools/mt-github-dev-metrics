@@ -4,6 +4,7 @@ import os
 import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from textwrap import dedent
 from typing import Any, Callable, Iterable
 
 import requests
@@ -100,6 +101,27 @@ class GithubClient:
         response = self._request("GET", path, params=params)
         return response.json()
 
+    def post_json(self, path: str, payload: dict[str, Any]) -> Any:
+        assert self.session is not None
+        url = f"{self.base_url}{path}"
+        try:
+            response = self.session.post(url, json=payload, timeout=30)
+        except requests.RequestException as exc:
+            raise GithubAPIError(f"GitHub API request failed: {exc}") from exc
+        if response.status_code == 401:
+            raise GithubAuthError("GitHub authentication failed. Check GITHUB_TOKEN.")
+        if response.status_code >= 400:
+            message = self._extract_error_message(response)
+            raise GithubAPIError(f"GitHub API request failed ({response.status_code}): {message}")
+        try:
+            data = response.json()
+        except ValueError as exc:
+            raise GithubAPIError("GitHub API request failed: invalid JSON response") from exc
+        if isinstance(data, dict) and data.get("errors"):
+            messages = ", ".join(str(item.get("message", "unknown error")) for item in data["errors"])
+            raise GithubAPIError(f"GitHub GraphQL request failed: {messages}")
+        return data
+
     def paginate(self, path: str, params: dict[str, Any] | None = None) -> list[Any]:
         params = dict(params or {})
         params.setdefault("per_page", 100)
@@ -165,3 +187,70 @@ class GithubClient:
         if isinstance(payload, dict):
             return list(payload.get("items", []))
         raise GithubAPIError("Expected search results payload")
+
+    def list_pull_review_threads(self, repo: RepoRef, number: int) -> list[Any]:
+        query = dedent(
+            """
+            query PullRequestReviewThreads($owner: String!, $name: String!, $number: Int!, $after: String) {
+              repository(owner: $owner, name: $name) {
+                pullRequest(number: $number) {
+                  reviewThreads(first: 100, after: $after) {
+                    nodes {
+                      id
+                      isResolved
+                      resolvedBy {
+                        login
+                      }
+                      comments(first: 100) {
+                        nodes {
+                          id
+                          body
+                          createdAt
+                          author {
+                            login
+                          }
+                          replyTo {
+                            id
+                          }
+                        }
+                      }
+                    }
+                    pageInfo {
+                      hasNextPage
+                      endCursor
+                    }
+                  }
+                }
+              }
+            }
+            """
+        ).strip()
+        after: str | None = None
+        results: list[Any] = []
+        while True:
+            payload = self.post_json(
+                "/graphql",
+                {
+                    "query": query,
+                    "variables": {
+                        "owner": repo.owner,
+                        "name": repo.name,
+                        "number": number,
+                        "after": after,
+                    },
+                },
+            )
+            repository = payload.get("data", {}).get("repository") if isinstance(payload, dict) else None
+            pull_request = repository.get("pullRequest") if isinstance(repository, dict) else None
+            review_threads = pull_request.get("reviewThreads") if isinstance(pull_request, dict) else None
+            if not isinstance(review_threads, dict):
+                raise GithubAPIError("Expected reviewThreads payload from GitHub GraphQL API")
+            nodes = review_threads.get("nodes", [])
+            if not isinstance(nodes, list):
+                raise GithubAPIError("Expected review thread nodes list from GitHub GraphQL API")
+            results.extend(nodes)
+            page_info = review_threads.get("pageInfo", {})
+            if not isinstance(page_info, dict) or not page_info.get("hasNextPage"):
+                break
+            after = page_info.get("endCursor")
+        return results

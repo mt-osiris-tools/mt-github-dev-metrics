@@ -50,6 +50,26 @@ def _review_state_counts(pr: PullRequestRecord) -> dict[str, int]:
     return counts
 
 
+def _unresolved_review_threads(pr: PullRequestRecord) -> list[dict[str, Any]]:
+    unresolved: list[dict[str, Any]] = []
+    for thread in pr.review_threads:
+        if thread.is_resolved:
+            continue
+        unresolved.append(
+            {
+                "id": thread.id,
+                "comment_count": len(thread.comments),
+                "participants": sorted({comment.author for comment in thread.comments if comment.author}),
+                "last_comment_at": max(
+                    (comment.created_at for comment in thread.comments if comment.created_at),
+                    default=None,
+                ),
+                "comments": [comment.to_dict() for comment in thread.comments],
+            }
+        )
+    return unresolved
+
+
 def _has_test_changes(pr: PullRequestRecord) -> tuple[bool, list[str]]:
     files = [file.filename for file in pr.files if is_test_file(file.filename)]
     return (len(files) > 0, files)
@@ -125,6 +145,8 @@ def calculate_metrics(
     pr_review_iterations: dict[str, int] = {}
     pr_time_to_merge_days: dict[str, float | None] = {}
     pr_review_states: dict[str, dict[str, int]] = {}
+    pr_unresolved_review_threads: dict[str, int] = {}
+    pr_unresolved_review_thread_details: dict[str, list[dict[str, Any]]] = {}
     pr_large_by_files = sorted(prs, key=lambda pr: pr.changed_files, reverse=True)
     pr_large_by_lines = sorted(prs, key=lambda pr: pr.additions + pr.deletions, reverse=True)
     average_pr_size = 0.0
@@ -144,6 +166,9 @@ def calculate_metrics(
             pr_noisy_commits[f"{pr.repo}#{pr.number}"] = noisy_commits
         pr_review_iterations[f"{pr.repo}#{pr.number}"] = len(pr.reviews)
         pr_review_states[f"{pr.repo}#{pr.number}"] = _review_state_counts(pr)
+        unresolved_threads = _unresolved_review_threads(pr)
+        pr_unresolved_review_threads[f"{pr.repo}#{pr.number}"] = len(unresolved_threads)
+        pr_unresolved_review_thread_details[f"{pr.repo}#{pr.number}"] = unresolved_threads
         if pr.merged_at:
             days = _days_between(pr.created_at, pr.merged_at)
             pr_time_to_merge_days[f"{pr.repo}#{pr.number}"] = days
@@ -161,6 +186,13 @@ def calculate_metrics(
     long_time_to_merge = [
         pr for pr in merged_prs if (_days_between(pr.created_at, pr.merged_at) or 0) > 7
     ]
+    closed_or_merged_prs = [pr for pr in prs if pr.state == "closed" or pr.merged_at]
+    closed_prs_with_unresolved_threads = [
+        pr for pr in closed_or_merged_prs if pr_unresolved_review_threads.get(f"{pr.repo}#{pr.number}", 0) > 0
+    ]
+    unresolved_review_threads_closed = sum(
+        pr_unresolved_review_threads.get(f"{pr.repo}#{pr.number}", 0) for pr in closed_or_merged_prs
+    )
 
     submitted_reviews = sum(len(item.submitted_reviews) for item in data.review_participation)
     review_comments = sum(len(item.review_comments) for item in data.review_participation)
@@ -217,6 +249,10 @@ def calculate_metrics(
         )
     if noisy_prs:
         opportunity_signals.append(f"{len(noisy_prs)} PR(s) included noisy commit messages.")
+    if unresolved_review_threads_closed:
+        opportunity_signals.append(
+            f"{unresolved_review_threads_closed} unresolved review thread(s) remained on closed or merged PRs."
+        )
     if long_time_to_merge:
         opportunity_signals.append(
             f"{len(long_time_to_merge)} merged PR(s) took more than 7 days to merge."
@@ -239,6 +275,8 @@ def calculate_metrics(
             "requested_changes": len(requested_changes),
             "multiple_review_iterations": len(multiple_review_iterations),
             "with_review_comments": sum(1 for pr in prs if pr.review_comments),
+            "unresolved_review_threads_closed": unresolved_review_threads_closed,
+            "prs_with_unresolved_review_threads_closed": len(closed_prs_with_unresolved_threads),
             "long_time_to_merge": len(long_time_to_merge),
             "merged_without_test_changes": len(merged_without_test_changes),
             "with_tests": len(prs_with_tests),
@@ -320,6 +358,8 @@ def calculate_metrics(
             "pr_review_states": pr_review_states,
             "pr_review_iterations": pr_review_iterations,
             "pr_time_to_merge_days": pr_time_to_merge_days,
+            "pr_unresolved_review_threads": pr_unresolved_review_threads,
+            "pr_unresolved_review_thread_details": pr_unresolved_review_thread_details,
         },
     }
 

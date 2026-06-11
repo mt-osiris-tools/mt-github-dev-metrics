@@ -634,20 +634,17 @@ HTML_TEMPLATE = """<!doctype html>
       const prsWithoutTests = Number(testing.prs_without_tests || 0);
       const noisyPrs = Number(gitHygiene.prs_with_noisy_commits?.length || 0);
       const reviewComments = Number(reviewParticipation.review_comments || 0);
-      const reviewSubmissions = Number(reviewParticipation.submitted_reviews || 0);
+      const unresolvedClosedThreads = Number(pullRequests.unresolved_review_threads_closed || 0);
       const contributionEvents = Number(contributions.total_contribution_events || 0);
-      const cadencePct = Math.round(Number(cadence.coverage_ratio || 0) * 100);
       const testCoveragePercent = percent(prsWithTests, prsOpened);
-      const reviewFriction = requestedChanges + noisyPrs + reviewComments;
-      const positiveSignals = (summary.positive_signals || []).slice(0, 3);
-      const opportunitySignals = (summary.opportunity_signals || []).slice(0, 3);
+      const reviewFriction = requestedChanges + noisyPrs + reviewComments + unresolvedClosedThreads;
 
       return `
         ${renderSidebarStat('PRs opened', fmtNumber(prsOpened), `${fmtNumber(prsMerged)} merged`)}
         ${renderSidebarStat('Open PRs', fmtNumber(prsOpen), `${fmtNumber(prsWithTests)} with tests`)}
         ${renderSidebarStat('Contributions', fmtNumber(contributionEvents), `${fmtNumber(contributions.repo_count || 0)} repos`)}
         ${renderSidebarStat('Test coverage', `${fmtNumber(testCoveragePercent)}%`, `${fmtNumber(prsWithoutTests)} without tests`)}
-        ${renderSidebarStat('Risk', fmtNumber(reviewFriction), `${fmtNumber(noisyPrs)} noisy PRs`)}
+        ${renderSidebarStat('Risk', fmtNumber(reviewFriction), `${fmtNumber(unresolvedClosedThreads)} unresolved threads`)}
       `;
     }
 
@@ -670,10 +667,11 @@ HTML_TEMPLATE = """<!doctype html>
       const noisyPrs = Number(gitHygiene.prs_with_noisy_commits?.length || 0);
       const reviewComments = Number(reviewParticipation.review_comments || 0);
       const reviewSubmissions = Number(reviewParticipation.submitted_reviews || 0);
+      const unresolvedClosedThreads = Number(pullRequests.unresolved_review_threads_closed || 0);
       const contributionEvents = Number(contributions.total_contribution_events || 0);
       const cadencePct = Math.round(Number(cadence.coverage_ratio || 0) * 100);
       const testCoveragePercent = percent(prsWithTests, prsOpened);
-      const reviewFriction = requestedChanges + noisyPrs + reviewComments;
+      const reviewFriction = requestedChanges + noisyPrs + reviewComments + unresolvedClosedThreads;
       const repoLabel = (report.repos || []).join(', ') || 'No repositories selected';
 
       return `
@@ -692,7 +690,7 @@ HTML_TEMPLATE = """<!doctype html>
               ${renderDashboardKpi('Open PRs', fmtNumber(prsOpen), `${fmtNumber(reviewSubmissions)} reviews submitted`, prsOpen ? 'warn' : 'good')}
               ${renderDashboardKpi('Contributions', fmtNumber(contributionEvents), `${fmtNumber(contributions.repo_count || 0)} repos`, contributionEvents ? 'good' : 'neutral')}
               ${renderDashboardKpi('Test coverage', `${fmtNumber(testCoveragePercent)}%`, `${fmtNumber(prsWithoutTests)} without tests`, testCoveragePercent >= 70 ? 'good' : testCoveragePercent >= 40 ? 'warn' : 'risk')}
-              ${renderDashboardKpi('Review friction', fmtNumber(reviewFriction), `${fmtNumber(noisyPrs)} noisy PRs`, reviewFriction >= 4 ? 'risk' : reviewFriction >= 2 ? 'warn' : 'good')}
+              ${renderDashboardKpi('Review friction', fmtNumber(reviewFriction), `${fmtNumber(unresolvedClosedThreads)} unresolved threads`, reviewFriction >= 4 ? 'risk' : reviewFriction >= 2 ? 'warn' : 'good')}
             </div>
             <div class="dashboard-stack">
               ${renderSignalRow('Testing coverage', `${fmtNumber(testCoveragePercent)}%`, testCoveragePercent, testCoveragePercent >= 70 ? 'good' : testCoveragePercent >= 40 ? 'warn' : 'risk')}
@@ -782,6 +780,8 @@ HTML_TEMPLATE = """<!doctype html>
       const testFiles = testing.pr_test_files?.[key] || [];
       const reviewStates = evidence.pr_review_states?.[key] || {};
       const reviewIterations = evidence.pr_review_iterations?.[key] ?? 0;
+      const unresolvedThreads = evidence.pr_unresolved_review_threads?.[key] ?? 0;
+      const unresolvedThreadDetails = evidence.pr_unresolved_review_thread_details?.[key] || [];
       const timeToMerge = evidence.pr_time_to_merge_days?.[key];
       const noisyMessages = noisyMap.get(key) || [];
       const riskReasons = [];
@@ -790,12 +790,14 @@ HTML_TEMPLATE = """<!doctype html>
       if (noisyMessages.length) riskReasons.push('Contains noisy commit messages');
       if (mergedWithoutTestsSet.has(key)) riskReasons.push('Merged without obvious test changes');
       if ((pr.review_comments || []).length) riskReasons.push('Has review comments');
+      if (unresolvedThreads) riskReasons.push(`${fmtNumber(unresolvedThreads)} unresolved review thread(s) remained at close`);
       const riskScore = [
         pr.state === 'open' ? 1 : 0,
         testFiles.length ? 0 : 1,
         noisyMessages.length ? 1 : 0,
         mergedWithoutTestsSet.has(key) ? 1 : 0,
         (pr.review_comments || []).length ? 1 : 0,
+        unresolvedThreads ? 1 : 0,
       ].reduce((sum, value) => sum + value, 0);
       const badges = [];
       if (pr.merged_at) badges.push(badge('Merged', 'good'));
@@ -805,6 +807,7 @@ HTML_TEMPLATE = """<!doctype html>
       else badges.push(badge('No tests', 'warn'));
       if (noisyMessages.length) badges.push(badge('Noisy commits', 'warn'));
       if (mergedWithoutTestsSet.has(key)) badges.push(badge('Merged without tests', 'warn'));
+      if (unresolvedThreads) badges.push(badge('Unresolved review threads', 'warn'));
 
       const reviewStateEntries = Object.entries(reviewStates)
         .map(([state, count]) => `${state}: ${count}`)
@@ -843,6 +846,7 @@ HTML_TEMPLATE = """<!doctype html>
               <div class="pr-table-cell">
                 <div class="pr-table-meta">${fmtNumber(reviewIterations)} iteration(s)</div>
                 <div class="pr-table-meta">${escapeHtml(reviewStateEntries || 'No reviews found')}</div>
+                <div class="pr-table-meta">${fmtNumber(unresolvedThreads)} unresolved thread(s)</div>
               </div>
               <div class="pr-table-cell">
                 <span class="signal-score ${scoreClass(riskScore)}">${riskLabel}</span>
@@ -880,6 +884,9 @@ HTML_TEMPLATE = """<!doctype html>
                 </div>
                 <div class="field-label">Review state</div>
                 <div>${escapeHtml(reviewStateEntries || 'No reviews found')}</div>
+                <div class="field-label" style="margin-top: 12px;">Unresolved threads at close</div>
+                <div>${fmtNumber(unresolvedThreads)}</div>
+                <div>${listToHtml(unresolvedThreadDetails.map(detail => `${fmtNumber(detail.comment_count || 0)} comment(s) from ${(detail.participants || []).join(', ') || 'unknown participants'}`), 'No unresolved review threads remained.')}</div>
               </div>
               <div class="pr-evidence-card">
                 <div class="pr-evidence-head">
@@ -927,11 +934,12 @@ HTML_TEMPLATE = """<!doctype html>
       const requestedChanges = Number(pullRequests.requested_changes || 0);
       const reviewComments = Number(reviewParticipation.review_comments || 0);
       const reviewSubmissions = Number(reviewParticipation.submitted_reviews || 0);
+      const unresolvedClosedThreads = Number(pullRequests.unresolved_review_threads_closed || 0);
       const contributionEvents = Number(contributions.total_contribution_events || 0);
       const contributionMix = contributions.contribution_mix || {};
       const contributedRepos = contributions.repos_contributed_to || [];
       const testCoveragePercent = percent(prsWithTests, prsOpened);
-      const reviewFriction = requestedChanges + noisyPrs + reviewComments;
+      const reviewFriction = requestedChanges + noisyPrs + reviewComments + unresolvedClosedThreads;
       const cadencePct = Math.round((Number(cadence.coverage_ratio || 0) * 100));
       const prStatusCounts = prs.reduce((acc, pr) => {
         if (pr.merged_at) acc.merged += 1;
@@ -948,6 +956,7 @@ HTML_TEMPLATE = """<!doctype html>
           testFiles.length ? 0 : 1,
           noisyMessages.length ? 1 : 0,
           (pr.review_comments || []).length ? 1 : 0,
+          (metrics.evidence?.pr_unresolved_review_threads?.[key] || 0) ? 1 : 0,
           (testing.merged_without_test_changes || []).some(item => item.repo === pr.repo && item.number === pr.number) ? 1 : 0,
         ].reduce((sum, value) => sum + value, 0);
         if (testFiles.length) acc.withTests += 1;
@@ -996,6 +1005,7 @@ HTML_TEMPLATE = """<!doctype html>
                   ${badge(`PRs ${fmtNumber(prsOpened)}`, prsOpened ? 'info' : 'neutral')}
                   ${badge(`Merged ${fmtNumber(prsMerged)}`, prsMerged ? 'good' : 'neutral')}
                   ${badge(`Noisy PRs ${fmtNumber(noisyPrs)}`, noisyPrs ? 'warn' : 'neutral')}
+                  ${badge(`Unresolved threads ${fmtNumber(unresolvedClosedThreads)}`, unresolvedClosedThreads ? 'warn' : 'neutral')}
                   ${badge(`Cadence ${fmtNumber(cadence.active_days || 0)}/${fmtNumber(cadence.period_days || 0)} days`, cadence.has_almost_daily_cadence ? 'good' : 'neutral')}
                 </div>
               </div>
@@ -1007,6 +1017,7 @@ HTML_TEMPLATE = """<!doctype html>
             <div class="detail-metric"><div class="label">PRs merged</div><div class="value">${fmtNumber(pullRequests.merged)}</div></div>
             <div class="detail-metric"><div class="label">Commits</div><div class="value">${fmtNumber(commitActivity.authored_commits)}</div></div>
             <div class="detail-metric"><div class="label">Tests touched</div><div class="value">${fmtNumber(testing.prs_with_tests)}</div></div>
+            <div class="detail-metric"><div class="label">Unresolved threads</div><div class="value">${fmtNumber(unresolvedClosedThreads)}</div></div>
           </section>
 
           <section class="detail-card" id="detail-contributions">
@@ -1088,6 +1099,7 @@ HTML_TEMPLATE = """<!doctype html>
               ${badge(`Requested changes: ${fmtNumber(pullRequests.requested_changes)}`, pullRequests.requested_changes ? 'warn' : 'neutral')}
               ${badge(`Multiple review iterations: ${fmtNumber(pullRequests.multiple_review_iterations)}`, pullRequests.multiple_review_iterations ? 'warn' : 'neutral')}
               ${badge(`With review comments: ${fmtNumber(pullRequests.with_review_comments)}`, pullRequests.with_review_comments ? 'info' : 'neutral')}
+              ${badge(`Unresolved threads at close: ${fmtNumber(unresolvedClosedThreads)}`, unresolvedClosedThreads ? 'warn' : 'neutral')}
               ${badge(`Long time-to-merge: ${fmtNumber(pullRequests.long_time_to_merge)}`, pullRequests.long_time_to_merge ? 'warn' : 'neutral')}
               ${badge(`Noisy PRs: ${fmtNumber(noisyPrs)}`, noisyPrs ? 'warn' : 'neutral')}
             </div>
