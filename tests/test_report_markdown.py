@@ -59,6 +59,7 @@ def test_markdown_report_generation() -> None:
                 commits=[
                     PullRequestCommit(sha="a1", message="WIP add banner", url="https://github.com/my-org/frontend-app/commit/a1"),
                 ],
+                included_events=["created", "merged"],
             )
         ],
         commits=[
@@ -97,10 +98,13 @@ def test_markdown_report_generation() -> None:
     assert "Repositories contributed to | 2" in rendered
     assert "Total contribution events | 4" in rendered
     assert "Contribution mix: PRs 1, commits 3, reviews 0, review comments 0" in rendered
+    assert "## Per-repo Breakdown" in rendered
+    assert "`my-org/frontend-app`: PRs selected 1, opened 1, merged 1" in rendered
     assert "## Commit Evidence" in rendered
     assert "## Commit Cadence Evidence" in rendered
     assert "## Pull Request Evidence" in rendered
     assert "my-org/frontend-app#42" in rendered
+    assert "Included by events: created, merged" in rendered
     assert "Unresolved review threads at close: 1" in rendered
     assert "1 comment(s) from reviewer" in rendered
     assert "**2026-03-11T09:00:00Z** `my-org/design-system` `b2c3d4e` Refine tokens" in rendered

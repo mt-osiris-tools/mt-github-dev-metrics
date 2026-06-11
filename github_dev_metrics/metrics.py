@@ -75,6 +75,30 @@ def _has_test_changes(pr: PullRequestRecord) -> tuple[bool, list[str]]:
     return (len(files) > 0, files)
 
 
+def _pr_has_event(pr: PullRequestRecord, event: str) -> bool:
+    return event in pr.included_events
+
+
+def _event_names_in_range(pr: PullRequestRecord, start: datetime | None, end: datetime | None) -> list[str]:
+    if pr.included_events:
+        return list(pr.included_events)
+    if start is None or end is None:
+        return []
+    events: list[str] = []
+    created_at = _parse_dt(pr.created_at)
+    merged_at = _parse_dt(pr.merged_at)
+    closed_at = _parse_dt(pr.closed_at)
+    if created_at is not None and start <= created_at <= end:
+        events.append("created")
+    if merged_at is not None and start <= merged_at <= end:
+        events.append("merged")
+    if closed_at is not None and start <= closed_at <= end and not (
+        merged_at is not None and start <= merged_at <= end
+    ):
+        events.append("closed")
+    return events
+
+
 def _commit_cadence(
     commits: list[Any],
     start_date: str,
@@ -131,9 +155,19 @@ def calculate_metrics(
 ) -> DeveloperMetrics:
     prs = data.prs
     commits = data.commits
+    range_start = _parse_dt(f"{data.date_from}T00:00:00Z")
+    range_end = _parse_dt(f"{data.date_to}T23:59:59Z")
+    pr_events = {
+        f"{pr.repo}#{pr.number}": _event_names_in_range(pr, range_start, range_end)
+        for pr in prs
+    }
+    for pr in prs:
+        if not pr.included_events:
+            pr.included_events = list(pr_events[f"{pr.repo}#{pr.number}"])
 
-    merged_prs = [pr for pr in prs if pr.merged_at]
-    closed_without_merge = [pr for pr in prs if pr.state == "closed" and not pr.merged_at]
+    opened_prs = [pr for pr in prs if _pr_has_event(pr, "created")]
+    merged_prs = [pr for pr in prs if _pr_has_event(pr, "merged")]
+    closed_without_merge = [pr for pr in prs if _pr_has_event(pr, "closed") and not pr.merged_at]
     open_prs = [pr for pr in prs if pr.state == "open"]
     requested_changes = [pr for pr in prs if any(review.state == "CHANGES_REQUESTED" for review in pr.reviews)]
     multiple_review_iterations = [pr for pr in prs if len(pr.reviews) > 1]
@@ -145,6 +179,7 @@ def calculate_metrics(
     pr_review_iterations: dict[str, int] = {}
     pr_time_to_merge_days: dict[str, float | None] = {}
     pr_review_states: dict[str, dict[str, int]] = {}
+    pr_included_events: dict[str, list[str]] = {}
     pr_unresolved_review_threads: dict[str, int] = {}
     pr_unresolved_review_thread_details: dict[str, list[dict[str, Any]]] = {}
     pr_large_by_files = sorted(prs, key=lambda pr: pr.changed_files, reverse=True)
@@ -166,6 +201,7 @@ def calculate_metrics(
             pr_noisy_commits[f"{pr.repo}#{pr.number}"] = noisy_commits
         pr_review_iterations[f"{pr.repo}#{pr.number}"] = len(pr.reviews)
         pr_review_states[f"{pr.repo}#{pr.number}"] = _review_state_counts(pr)
+        pr_included_events[f"{pr.repo}#{pr.number}"] = list(pr.included_events)
         unresolved_threads = _unresolved_review_threads(pr)
         pr_unresolved_review_threads[f"{pr.repo}#{pr.number}"] = len(unresolved_threads)
         pr_unresolved_review_thread_details[f"{pr.repo}#{pr.number}"] = unresolved_threads
@@ -223,6 +259,37 @@ def calculate_metrics(
         "reviews": submitted_reviews,
         "review_comments": review_comments,
     }
+    per_repo_names = sorted(set(data.repos) | {pr.repo for pr in prs} | {commit.repo for commit in commits} | {item.repo for item in data.review_participation})
+    per_repo: dict[str, Any] = {}
+    for repo_name in per_repo_names:
+        repo_prs = [pr for pr in prs if pr.repo == repo_name]
+        repo_commits = [commit for commit in commits if commit.repo == repo_name]
+        repo_review_items = [item for item in data.review_participation if item.repo == repo_name]
+        repo_reviews = sum(len(item.submitted_reviews) for item in repo_review_items)
+        repo_review_comments = sum(len(item.review_comments) for item in repo_review_items)
+        per_repo[repo_name] = {
+            "pull_requests": {
+                "selected": len(repo_prs),
+                "opened": sum(1 for pr in repo_prs if _pr_has_event(pr, "created")),
+                "merged": sum(1 for pr in repo_prs if _pr_has_event(pr, "merged")),
+                "closed_without_merge": sum(1 for pr in repo_prs if _pr_has_event(pr, "closed") and not pr.merged_at),
+            },
+            "commits": {
+                "authored": len(repo_commits),
+                "cadence": _commit_cadence(
+                    repo_commits,
+                    data.date_from,
+                    data.date_to,
+                    cadence_target,
+                    cadence_min_active_days,
+                ),
+            },
+            "review_participation": {
+                "submitted_reviews": repo_reviews,
+                "review_comments": repo_review_comments,
+            },
+            "total_contribution_events": len(repo_prs) + len(repo_commits) + repo_reviews + repo_review_comments,
+        }
 
     positive_signals: list[str] = []
     if merged_prs:
@@ -268,7 +335,7 @@ def calculate_metrics(
 
     metrics: dict[str, Any] = {
         "pull_requests": {
-            "opened": len(prs),
+            "opened": len(opened_prs),
             "merged": len(merged_prs),
             "closed_without_merge": len(closed_without_merge),
             "open": len(open_prs),
@@ -353,8 +420,10 @@ def calculate_metrics(
             "repo_count": len(contributed_repos),
             "total_contribution_events": total_contribution_events,
             "contribution_mix": contribution_mix,
+            "per_repo": per_repo,
         },
         "evidence": {
+            "pr_included_events": pr_included_events,
             "pr_review_states": pr_review_states,
             "pr_review_iterations": pr_review_iterations,
             "pr_time_to_merge_days": pr_time_to_merge_days,

@@ -111,6 +111,7 @@ class PullRequestRecord:
     files: list[PullRequestFile] = field(default_factory=list)
     commits: list[PullRequestCommit] = field(default_factory=list)
     merged_by: str | None = None
+    included_events: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -132,6 +133,7 @@ class PullRequestRecord:
             "review_threads": [thread.to_dict() for thread in self.review_threads],
             "files": [file.to_dict() for file in self.files],
             "commits": [commit.to_dict() for commit in self.commits],
+            "included_events": list(self.included_events),
         }
 
 

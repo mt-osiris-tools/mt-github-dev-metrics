@@ -56,6 +56,7 @@ def _fmt_unresolved_thread_details(details: list[dict[str, Any]]) -> str:
 
 def _pr_line(pr: PullRequestRecord, metrics: dict[str, Any]) -> str:
     key = f"{pr.repo}#{pr.number}"
+    included_events = metrics.get("evidence", {}).get("pr_included_events", {}).get(key, [])
     review_states = metrics.get("evidence", {}).get("pr_review_states", {}).get(key, {})
     unresolved_threads = metrics.get("evidence", {}).get("pr_unresolved_review_threads", {}).get(key, 0)
     unresolved_thread_details = metrics.get("evidence", {}).get("pr_unresolved_review_thread_details", {}).get(key, [])
@@ -68,6 +69,7 @@ def _pr_line(pr: PullRequestRecord, metrics: dict[str, Any]) -> str:
         f"- **{pr.repo}#{pr.number}** {pr.title}\n"
         f"  - URL: {pr.url}\n"
         f"  - State: {pr.state}\n"
+        f"  - Included by events: {', '.join(included_events) if included_events else 'No in-range lifecycle events recorded'}\n"
         f"  - Created: {pr.created_at}\n"
         f"  - Merged: {_fmt_date(pr.merged_at)}\n"
         f"  - Closed: {_fmt_date(pr.closed_at)}\n"
@@ -155,6 +157,19 @@ def render_markdown_report(data: DeveloperMetrics) -> str:
     lines.append(
         f"- Contribution mix: PRs {_fmt_number(mix.get('pull_requests', 0))}, commits {_fmt_number(mix.get('commits', 0))}, reviews {_fmt_number(mix.get('reviews', 0))}, review comments {_fmt_number(mix.get('review_comments', 0))}"
     )
+    lines.append("")
+    lines.append("## Per-repo Breakdown")
+    per_repo = contributions.get("per_repo", {})
+    if per_repo:
+        for repo_name, repo_metrics in per_repo.items():
+            repo_prs = repo_metrics.get("pull_requests", {})
+            repo_commits = repo_metrics.get("commits", {})
+            repo_reviews = repo_metrics.get("review_participation", {})
+            lines.append(
+                f"- `{repo_name}`: PRs selected {_fmt_number(repo_prs.get('selected', 0))}, opened {_fmt_number(repo_prs.get('opened', 0))}, merged {_fmt_number(repo_prs.get('merged', 0))}, closed without merge {_fmt_number(repo_prs.get('closed_without_merge', 0))}, commits {_fmt_number(repo_commits.get('authored', 0))}, reviews {_fmt_number(repo_reviews.get('submitted_reviews', 0))}, review comments {_fmt_number(repo_reviews.get('review_comments', 0))}, cadence {fmt_cadence(repo_commits.get('cadence', {}))}"
+            )
+    else:
+        lines.append("- No per-repo contribution data was available.")
     lines.append("")
     lines.append("## Positive Signals")
     if data.summary.positive_signals:

@@ -4,6 +4,8 @@
 
 When you run it inside a git repository, it can infer the current GitHub repository from the local `origin` remote. In that mode, the only required inputs are the developer plus either a week or a from/to date range, and the CLI writes a Markdown report into `report/` by default unless you pass `--format json` or `--format csv`.
 
+The selected date range is interpreted as contribution event time. PRs are included when the developer created, merged, or closed them during the window, commits are included by commit authored time, and review participation is filtered by the actual review or review-comment timestamp after best-effort PR discovery.
+
 If you run it outside a git repository and omit `--repos`, pass `--org` to scan the accessible non-archived repositories in that GitHub organization.
 
 ## Requirements
@@ -174,6 +176,7 @@ Review participation:
 
 - Reviews submitted by the developer on other PRs, best-effort
 - Review comments submitted by the developer, best-effort
+- Per-repo breakdown so one repository can be compared cleanly across single-repo and multi-repo runs
 
 Report interpretation:
 
@@ -204,6 +207,7 @@ Recommended token types:
 ## Known Limitations
 
 - Review participation is best-effort. GitHub search and visibility rules can prevent a complete picture of review activity.
+- Review participation candidate discovery still relies on GitHub search `updated:` filtering before the tool applies local timestamp checks to the returned reviews and review comments.
 - Commit author matching depends on GitHub associating commits with the provided username through the REST API.
 - The tool detects test files using filename patterns only; it does not understand test semantics.
 - “Long time-to-merge” is currently flagged at more than 7 days from PR creation to merge.

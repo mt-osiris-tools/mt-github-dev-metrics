@@ -132,21 +132,25 @@ def test_build_report_payload_returns_renderable_report() -> None:
     assert payload["metrics"]["pull_requests"]["opened"] == 1
     assert payload["metrics"]["pull_requests"]["unresolved_review_threads_closed"] == 1
     assert payload["metrics"]["commit_activity"]["cadence"]["has_almost_daily_cadence"] is True
-    assert payload["metrics"]["developer_contributions"] == {
-        "authored_prs": 1,
-        "merged_prs": 1,
-        "authored_commits": 5,
-        "reviews_submitted": 0,
+    assert payload["metrics"]["developer_contributions"]["authored_prs"] == 1
+    assert payload["metrics"]["developer_contributions"]["merged_prs"] == 1
+    assert payload["metrics"]["developer_contributions"]["authored_commits"] == 5
+    assert payload["metrics"]["developer_contributions"]["reviews_submitted"] == 0
+    assert payload["metrics"]["developer_contributions"]["review_comments"] == 0
+    assert payload["metrics"]["developer_contributions"]["repos_contributed_to"] == ["example-org/frontend-app"]
+    assert payload["metrics"]["developer_contributions"]["repo_count"] == 1
+    assert payload["metrics"]["developer_contributions"]["total_contribution_events"] == 6
+    assert payload["metrics"]["developer_contributions"]["contribution_mix"] == {
+        "pull_requests": 1,
+        "commits": 5,
+        "reviews": 0,
         "review_comments": 0,
-        "repos_contributed_to": ["example-org/frontend-app"],
-        "repo_count": 1,
-        "total_contribution_events": 6,
-        "contribution_mix": {
-            "pull_requests": 1,
-            "commits": 5,
-            "reviews": 0,
-            "review_comments": 0,
-        },
+    }
+    assert payload["metrics"]["developer_contributions"]["per_repo"]["example-org/frontend-app"]["pull_requests"] == {
+        "selected": 1,
+        "opened": 1,
+        "merged": 1,
+        "closed_without_merge": 0,
     }
     assert "## Developer Contributions" in payload["markdown"]
     assert payload["json"]["prs"][0]["review_threads"][0]["id"] == "thread-1"

@@ -76,6 +76,7 @@ def test_pr_metrics_calculation() -> None:
                     PullRequestCommit(sha="a1", message="WIP add banner", url="https://github.com/my-org/frontend-app/commit/a1"),
                     PullRequestCommit(sha="a2", message="Implement banner", url="https://github.com/my-org/frontend-app/commit/a2"),
                 ],
+                included_events=["created", "merged"],
             ),
             PullRequestRecord(
                 repo="my-org/frontend-app",
@@ -93,6 +94,7 @@ def test_pr_metrics_calculation() -> None:
                 reviews=[],
                 files=[PullRequestFile(filename="src/header.ts", additions=50, deletions=10, changes=60)],
                 commits=[PullRequestCommit(sha="b1", message="Add header refactor", url=None)],
+                included_events=["created"],
             ),
         ],
         commits=[
@@ -144,10 +146,169 @@ def test_pr_metrics_calculation() -> None:
             "reviews": 0,
             "review_comments": 0,
         },
+        "per_repo": {
+            "my-org/design-system": {
+                "pull_requests": {"selected": 0, "opened": 0, "merged": 0, "closed_without_merge": 0},
+                "commits": {
+                    "authored": 0,
+                    "cadence": {
+                        "active_days": 0,
+                        "period_days": 0,
+                        "coverage_ratio": 0.0,
+                        "has_almost_daily_cadence": False,
+                        "max_gap_days": None,
+                    },
+                },
+                "review_participation": {"submitted_reviews": 0, "review_comments": 0},
+                "total_contribution_events": 0,
+            },
+            "my-org/frontend-app": {
+                "pull_requests": {"selected": 2, "opened": 2, "merged": 1, "closed_without_merge": 0},
+                "commits": {
+                    "authored": 1,
+                    "cadence": {
+                        "active_days": 1,
+                        "period_days": 92,
+                        "coverage_ratio": 1 / 92,
+                        "has_almost_daily_cadence": False,
+                        "max_gap_days": 0,
+                    },
+                },
+                "review_participation": {"submitted_reviews": 0, "review_comments": 0},
+                "total_contribution_events": 3,
+            },
+        },
     }
     assert calculated.summary.positive_signals
     assert calculated.summary.opportunity_signals
     assert any("unresolved review thread" in signal for signal in calculated.summary.opportunity_signals)
+
+
+def test_pr_metrics_use_event_timestamps_not_current_state() -> None:
+    data = DeveloperMetrics(
+        developer="alan",
+        org="my-org",
+        repos=["my-org/frontend-app"],
+        date_from="2026-05-01",
+        date_to="2026-05-31",
+        prs=[
+            PullRequestRecord(
+                repo="my-org/frontend-app",
+                number=42,
+                title="Created in April, merged in May",
+                url="https://github.com/my-org/frontend-app/pull/42",
+                state="closed",
+                author="alan",
+                created_at="2026-04-29T10:00:00Z",
+                merged_at="2026-05-03T12:00:00Z",
+                closed_at="2026-05-03T12:00:00Z",
+                additions=10,
+                deletions=2,
+                changed_files=1,
+                included_events=["merged"],
+            ),
+            PullRequestRecord(
+                repo="my-org/frontend-app",
+                number=43,
+                title="Created in May, merged in June",
+                url="https://github.com/my-org/frontend-app/pull/43",
+                state="closed",
+                author="alan",
+                created_at="2026-05-20T10:00:00Z",
+                merged_at="2026-06-02T12:00:00Z",
+                closed_at="2026-06-02T12:00:00Z",
+                additions=12,
+                deletions=4,
+                changed_files=1,
+                included_events=["created"],
+            ),
+        ],
+    )
+
+    calculated = calculate_metrics(data)
+
+    assert calculated.metrics["pull_requests"]["opened"] == 1
+    assert calculated.metrics["pull_requests"]["merged"] == 1
+    assert calculated.metrics["developer_contributions"]["merged_prs"] == 1
+
+
+def test_per_repo_breakdown_stays_stable_for_lms_medtrainer_overlap() -> None:
+    shared_pr = PullRequestRecord(
+        repo="MedTrainer365/lms-medtrainer",
+        number=9427,
+        title="LMS change",
+        url="https://github.com/MedTrainer365/lms-medtrainer/pull/9427",
+        state="closed",
+        author="IrvingSG-dev",
+        created_at="2026-05-10T10:00:00Z",
+        merged_at="2026-05-12T12:00:00Z",
+        closed_at="2026-05-12T12:00:00Z",
+        additions=25,
+        deletions=5,
+        changed_files=3,
+        included_events=["created", "merged"],
+    )
+    shared_commit = CommitRecord(
+        repo="MedTrainer365/lms-medtrainer",
+        sha="abc123",
+        message="LMS commit",
+        url="https://github.com/MedTrainer365/lms-medtrainer/commit/abc123",
+        authored_at="2026-05-11T09:00:00Z",
+    )
+
+    lms_only = calculate_metrics(
+        DeveloperMetrics(
+            developer="IrvingSG-dev",
+            org="MedTrainer365",
+            repos=["MedTrainer365/lms-medtrainer"],
+            date_from="2026-05-01",
+            date_to="2026-05-31",
+            prs=[shared_pr],
+            commits=[shared_commit],
+        )
+    )
+    combined = calculate_metrics(
+        DeveloperMetrics(
+            developer="IrvingSG-dev",
+            org="MedTrainer365",
+            repos=["MedTrainer365/form-builder-api", "MedTrainer365/lms-medtrainer"],
+            date_from="2026-05-01",
+            date_to="2026-05-31",
+            prs=[
+                shared_pr,
+                PullRequestRecord(
+                    repo="MedTrainer365/form-builder-api",
+                    number=66,
+                    title="Form builder change",
+                    url="https://github.com/MedTrainer365/form-builder-api/pull/66",
+                    state="closed",
+                    author="IrvingSG-dev",
+                    created_at="2026-05-15T10:00:00Z",
+                    merged_at="2026-05-16T12:00:00Z",
+                    closed_at="2026-05-16T12:00:00Z",
+                    additions=40,
+                    deletions=10,
+                    changed_files=4,
+                    included_events=["created", "merged"],
+                ),
+            ],
+            commits=[
+                shared_commit,
+                CommitRecord(
+                    repo="MedTrainer365/form-builder-api",
+                    sha="def456",
+                    message="Form builder commit",
+                    url="https://github.com/MedTrainer365/form-builder-api/commit/def456",
+                    authored_at="2026-05-15T09:00:00Z",
+                ),
+            ],
+        )
+    )
+
+    assert (
+        lms_only.metrics["developer_contributions"]["per_repo"]["MedTrainer365/lms-medtrainer"]
+        == combined.metrics["developer_contributions"]["per_repo"]["MedTrainer365/lms-medtrainer"]
+    )
 
 
 def test_commit_cadence_flags_almost_daily_pattern() -> None:

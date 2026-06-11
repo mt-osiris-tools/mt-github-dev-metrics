@@ -181,6 +181,7 @@ def test_collect_metrics_builds_records() -> None:
 
     assert metrics.prs[0].title == "Add onboarding banner"
     assert metrics.commits[0].message == "Implement feature"
+    assert metrics.prs[0].included_events == ["created", "merged"]
     assert metrics.prs[0].review_threads[0].id == "thread-1"
     assert metrics.prs[0].review_threads[0].comments[0].author == "reviewer"
     assert metrics.limitations == [
@@ -362,6 +363,94 @@ def test_collect_metrics_deduplicates_commits_found_on_multiple_branches() -> No
         ("abc", "Shared commit"),
         ("def", "Feature-only commit"),
     ]
+
+
+def test_collect_metrics_includes_pr_merged_inside_window_even_if_created_before() -> None:
+    client = FakeGithubClient(
+        {
+            "pulls:my-org/frontend-app": [
+                {
+                    "number": 42,
+                    "user": {"login": "alan"},
+                    "created_at": "2026-04-29T10:00:00Z",
+                }
+            ],
+            "pull:my-org/frontend-app:42": {
+                "title": "Ship feature in May",
+                "html_url": "https://github.com/my-org/frontend-app/pull/42",
+                "state": "closed",
+                "created_at": "2026-04-29T10:00:00Z",
+                "merged_at": "2026-05-03T12:00:00Z",
+                "closed_at": "2026-05-03T12:00:00Z",
+                "additions": 10,
+                "deletions": 2,
+                "changed_files": 1,
+            },
+            "files:my-org/frontend-app:42": [],
+            "pr_commits:my-org/frontend-app:42": [],
+            "reviews:my-org/frontend-app:42": [],
+            "review_comments:my-org/frontend-app:42": [],
+            "review_threads:my-org/frontend-app:42": [],
+            "branches:my-org/frontend-app": [],
+            "search": [],
+        }
+    )
+
+    metrics = collect_metrics(
+        client,  # type: ignore[arg-type]
+        "alan",
+        "my-org",
+        ["frontend-app"],
+        datetime(2026, 5, 1, tzinfo=timezone.utc),
+        datetime(2026, 5, 31, tzinfo=timezone.utc),
+    )
+
+    assert [pr.number for pr in metrics.prs] == [42]
+    assert metrics.prs[0].included_events == ["merged"]
+
+
+def test_collect_metrics_filters_review_participation_by_actual_review_timestamps() -> None:
+    client = FakeGithubClient(
+        {
+            "pulls:my-org/frontend-app": [],
+            "branches:my-org/frontend-app": [{"name": "main"}],
+            "commits:my-org/frontend-app:main": [
+                {
+                    "sha": "abc",
+                    "commit": {"message": "Implement feature", "author": {"date": "2026-05-10T10:00:00Z"}},
+                    "html_url": "https://github.com/my-org/frontend-app/commit/abc",
+                }
+            ],
+            "search": [
+                {
+                    "title": "Touched in June",
+                    "state": "closed",
+                    "html_url": "https://github.com/my-org/frontend-app/pull/42",
+                }
+            ],
+            "reviews:my-org/frontend-app:42": [
+                {"user": {"login": "alan"}, "state": "APPROVED", "submitted_at": "2026-05-20T10:00:00Z"},
+                {"user": {"login": "alan"}, "state": "APPROVED", "submitted_at": "2026-06-02T10:00:00Z"},
+            ],
+            "review_comments:my-org/frontend-app:42": [
+                {"user": {"login": "alan"}, "body": "Looks good", "path": "src/app.ts", "created_at": "2026-05-21T10:00:00Z"},
+                {"user": {"login": "alan"}, "body": "Late follow-up", "path": "src/app.ts", "created_at": "2026-06-03T10:00:00Z"},
+            ],
+        }
+    )
+
+    metrics = collect_metrics(
+        client,  # type: ignore[arg-type]
+        "alan",
+        "my-org",
+        ["frontend-app"],
+        datetime(2026, 5, 1, tzinfo=timezone.utc),
+        datetime(2026, 5, 31, tzinfo=timezone.utc),
+    )
+
+    assert len(metrics.review_participation) == 1
+    assert len(metrics.review_participation[0].submitted_reviews) == 1
+    assert len(metrics.review_participation[0].review_comments) == 1
 
 
 def test_load_local_env_file_reads_dotenv(tmp_path, monkeypatch) -> None:

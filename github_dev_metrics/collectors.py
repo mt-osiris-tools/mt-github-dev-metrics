@@ -141,6 +141,20 @@ def _within_range(value: str | None, start: datetime, end: datetime) -> bool:
     return start <= dt <= end
 
 
+def _pr_included_events(pull: dict[str, Any], detailed: dict[str, Any], start: datetime, end: datetime) -> list[str]:
+    events: list[str] = []
+    created_at = detailed.get("created_at") or pull.get("created_at")
+    merged_at = detailed.get("merged_at")
+    closed_at = detailed.get("closed_at")
+    if _within_range(created_at, start, end):
+        events.append("created")
+    if _within_range(merged_at, start, end):
+        events.append("merged")
+    if _within_range(closed_at, start, end) and not _within_range(merged_at, start, end):
+        events.append("closed")
+    return events
+
+
 def _extract_pr_from_search_item(item: dict[str, Any]) -> tuple[str | None, int | None]:
     url = str(item.get("html_url") or item.get("pull_request", {}).get("url") or "")
     if not url:
@@ -229,11 +243,13 @@ def collect_metrics(
         pulls = client.list_repo_pulls(repo, state="all")
         for pull in pulls:
             author = str(pull.get("user", {}).get("login", ""))
-            created_at = pull.get("created_at")
-            if author != developer or not _within_range(created_at, date_from, date_to):
+            if author != developer:
                 continue
             number = int(pull["number"])
             detailed = client.get_pull(repo, number)
+            included_events = _pr_included_events(pull, detailed, date_from, date_to)
+            if not included_events:
+                continue
             files_raw = client.list_pull_files(repo, number)
             commits_raw = client.list_pull_commits(repo, number)
             reviews, review_comments = _pull_review_records(client, repo, number, developer)
@@ -273,7 +289,7 @@ def collect_metrics(
                     url=str(detailed.get("html_url", "")),
                     state=str(detailed.get("state", "")),
                     author=author,
-                    created_at=str(detailed.get("created_at", created_at)),
+                    created_at=str(detailed.get("created_at", pull.get("created_at", ""))),
                     merged_at=detailed.get("merged_at"),
                     closed_at=detailed.get("closed_at"),
                     additions=int(detailed.get("additions", 0) or 0),
@@ -285,6 +301,7 @@ def collect_metrics(
                     files=files,
                     commits=commits,
                     merged_by=detailed.get("merged_by", {}).get("login") if detailed.get("merged_by") else None,
+                    included_events=included_events,
                 )
             )
 
@@ -332,8 +349,16 @@ def collect_metrics(
                 seen.add(key)
                 repo_ref = RepoRef(*pr_repo.split("/", 1))
                 reviews, review_comments = _pull_review_records(client, repo_ref, number, developer)
-                submitted_reviews = [review for review in reviews if review.user == developer]
-                submitted_comments = [comment for comment in review_comments if comment.get("user") == developer]
+                submitted_reviews = [
+                    review
+                    for review in reviews
+                    if review.user == developer and _within_range(review.submitted_at, date_from, date_to)
+                ]
+                submitted_comments = [
+                    comment
+                    for comment in review_comments
+                    if comment.get("user") == developer and _within_range(comment.get("created_at"), date_from, date_to)
+                ]
                 if submitted_reviews or submitted_comments:
                     review_participation.append(
                         ReviewParticipationRecord(
