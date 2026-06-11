@@ -221,6 +221,7 @@ def collect_metrics(
     review_participation: list[ReviewParticipationRecord] = []
     limitations: list[str] = []
     review_thread_limitation_added = False
+    branch_visibility_limitation_added = False
 
     for index, repo in enumerate(repo_refs, start=1):
         if progress is not None:
@@ -287,17 +288,32 @@ def collect_metrics(
                 )
             )
 
-        commits_raw = client.list_repo_commits(repo, developer, date_from, date_to)
-        for item in commits_raw:
-            commit_records.append(
-                CommitRecord(
-                    repo=repo.full_name,
-                    sha=str(item.get("sha", "")),
-                    message=str(item.get("commit", {}).get("message", "")),
-                    url=item.get("html_url"),
-                    authored_at=item.get("commit", {}).get("author", {}).get("date"),
-                )
+        seen_commit_shas: set[str] = set()
+        branches_raw = client.list_repo_branches(repo)
+        if branches_raw and not branch_visibility_limitation_added:
+            limitations.append(
+                "Commit activity is collected across visible branches and de-duplicated by SHA; hidden or inaccessible branches may still be omitted by GitHub permissions."
             )
+            branch_visibility_limitation_added = True
+        for branch in branches_raw:
+            branch_name = str(branch.get("name", "")).strip()
+            if not branch_name:
+                continue
+            commits_raw = client.list_repo_commits(repo, developer, date_from, date_to, sha=branch_name)
+            for item in commits_raw:
+                sha = str(item.get("sha", ""))
+                if not sha or sha in seen_commit_shas:
+                    continue
+                seen_commit_shas.add(sha)
+                commit_records.append(
+                    CommitRecord(
+                        repo=repo.full_name,
+                        sha=sha,
+                        message=str(item.get("commit", {}).get("message", "")),
+                        url=item.get("html_url"),
+                        authored_at=item.get("commit", {}).get("author", {}).get("date"),
+                    )
+                )
 
         # Best-effort review participation search. GitHub search supports reviewed-by queries,
         # but it is limited to visible PRs and may miss some comments.

@@ -159,15 +159,25 @@ class GithubClient:
     def list_pull_commits(self, repo: RepoRef, number: int) -> list[Any]:
         return self.paginate(f"/repos/{repo.full_name}/pulls/{number}/commits")
 
-    def list_repo_commits(self, repo: RepoRef, author: str, since: datetime, until: datetime) -> list[Any]:
-        return self.paginate(
-            f"/repos/{repo.full_name}/commits",
-            params={
-                "author": author,
-                "since": _to_datetime(since).isoformat(),
-                "until": _to_datetime(until).isoformat(),
-            },
-        )
+    def list_repo_branches(self, repo: RepoRef) -> list[Any]:
+        return self.paginate(f"/repos/{repo.full_name}/branches")
+
+    def list_repo_commits(
+        self,
+        repo: RepoRef,
+        author: str,
+        since: datetime,
+        until: datetime,
+        sha: str | None = None,
+    ) -> list[Any]:
+        params = {
+            "author": author,
+            "since": _to_datetime(since).isoformat(),
+            "until": _to_datetime(until).isoformat(),
+        }
+        if sha:
+            params["sha"] = sha
+        return self.paginate(f"/repos/{repo.full_name}/commits", params=params)
 
     def list_org_repos(self, org: str, include_archived: bool = False) -> list[RepoRef]:
         payload = self.paginate(f"/orgs/{org}/repos", params={"type": "all", "sort": "full_name", "direction": "asc"})

@@ -15,6 +15,9 @@ class FakeGithubClient:
             }
         ]
 
+    def list_repo_branches(self, repo):
+        return [{"name": "main"}]
+
     def get_pull(self, repo, number: int):
         return {
             "title": "Add onboarding banner",
@@ -66,7 +69,7 @@ class FakeGithubClient:
             }
         ]
 
-    def list_repo_commits(self, repo, author, since, until):
+    def list_repo_commits(self, repo, author, since, until, sha=None):
         return [
             {
                 "sha": "abc1",

@@ -22,6 +22,9 @@ class FakeGithubClient:
     def list_repo_pulls(self, repo, state="all"):
         return self.payloads.get(f"pulls:{repo.full_name}", [])
 
+    def list_repo_branches(self, repo):
+        return self.payloads.get(f"branches:{repo.full_name}", [])
+
     def get_pull(self, repo, number: int):
         return self.payloads.get(f"pull:{repo.full_name}:{number}", {})
 
@@ -43,7 +46,12 @@ class FakeGithubClient:
             raise value
         return value
 
-    def list_repo_commits(self, repo, author, since, until):
+    def list_repo_commits(self, repo, author, since, until, sha=None):
+        if sha is not None:
+            return self.payloads.get(
+                f"commits:{repo.full_name}:{sha}",
+                self.payloads.get(f"commits:{repo.full_name}", []),
+            )
         return self.payloads.get(f"commits:{repo.full_name}", [])
 
     def search_issues(self, query: str):
@@ -79,6 +87,7 @@ def test_collect_metrics_handles_empty_results() -> None:
     client = FakeGithubClient(
         {
             "pulls:my-org/frontend-app": [],
+            "branches:my-org/frontend-app": [],
             "commits:my-org/frontend-app": [],
             "search": [],
         }
@@ -149,7 +158,8 @@ def test_collect_metrics_builds_records() -> None:
                     },
                 }
             ],
-            "commits:my-org/frontend-app": [
+            "branches:my-org/frontend-app": [{"name": "main"}],
+            "commits:my-org/frontend-app:main": [
                 {
                     "sha": "abc",
                     "commit": {"message": "Implement feature", "author": {"date": "2026-03-10T10:00:00Z"}},
@@ -173,13 +183,17 @@ def test_collect_metrics_builds_records() -> None:
     assert metrics.commits[0].message == "Implement feature"
     assert metrics.prs[0].review_threads[0].id == "thread-1"
     assert metrics.prs[0].review_threads[0].comments[0].author == "reviewer"
+    assert metrics.limitations == [
+        "Commit activity is collected across visible branches and de-duplicated by SHA; hidden or inaccessible branches may still be omitted by GitHub permissions."
+    ]
 
 
 def test_collect_metrics_reports_repo_progress_in_order() -> None:
     client = FakeGithubClient(
         {
             "pulls:my-org/frontend-app": [],
-            "commits:my-org/frontend-app": [
+            "branches:my-org/frontend-app": [{"name": "main"}],
+            "commits:my-org/frontend-app:main": [
                 {
                     "sha": "abc",
                     "commit": {"message": "Implement feature", "author": {"date": "2026-03-10T10:00:00Z"}},
@@ -187,7 +201,8 @@ def test_collect_metrics_reports_repo_progress_in_order() -> None:
                 }
             ],
             "pulls:my-org/design-system": [],
-            "commits:my-org/design-system": [
+            "branches:my-org/design-system": [{"name": "main"}],
+            "commits:my-org/design-system:main": [
                 {
                     "sha": "def",
                     "commit": {"message": "Update tokens", "author": {"date": "2026-03-11T10:00:00Z"}},
@@ -217,6 +232,9 @@ def test_collect_metrics_reports_repo_progress_in_order() -> None:
         "Collecting my-org/frontend-app (1/2)...",
         "Collecting my-org/design-system (2/2)...",
     ]
+    assert metrics.limitations == [
+        "Commit activity is collected across visible branches and de-duplicated by SHA; hidden or inaccessible branches may still be omitted by GitHub permissions."
+    ]
 
 
 def test_collect_metrics_adds_limitation_when_review_threads_fail() -> None:
@@ -245,7 +263,8 @@ def test_collect_metrics_adds_limitation_when_review_threads_fail() -> None:
             "reviews:my-org/frontend-app:42": [],
             "review_comments:my-org/frontend-app:42": [],
             "review_threads:my-org/frontend-app:42": GithubAPIError("GraphQL denied"),
-            "commits:my-org/frontend-app": [
+            "branches:my-org/frontend-app": [{"name": "main"}],
+            "commits:my-org/frontend-app:main": [
                 {
                     "sha": "abc",
                     "commit": {"message": "Implement feature", "author": {"date": "2026-03-10T10:00:00Z"}},
@@ -267,7 +286,81 @@ def test_collect_metrics_adds_limitation_when_review_threads_fail() -> None:
 
     assert metrics.prs[0].review_threads == []
     assert metrics.limitations == [
-        "Review thread resolution is best-effort; GitHub GraphQL access or visibility constraints may hide unresolved threads."
+        "Review thread resolution is best-effort; GitHub GraphQL access or visibility constraints may hide unresolved threads.",
+        "Commit activity is collected across visible branches and de-duplicated by SHA; hidden or inaccessible branches may still be omitted by GitHub permissions.",
+    ]
+
+
+def test_collect_metrics_includes_branch_only_commits() -> None:
+    client = FakeGithubClient(
+        {
+            "pulls:my-org/frontend-app": [],
+            "branches:my-org/frontend-app": [{"name": "main"}, {"name": "feature/alpha"}],
+            "commits:my-org/frontend-app:main": [],
+            "commits:my-org/frontend-app:feature/alpha": [
+                {
+                    "sha": "abc",
+                    "commit": {"message": "Feature branch work", "author": {"date": "2026-03-10T10:00:00Z"}},
+                    "html_url": "https://github.com/my-org/frontend-app/commit/abc",
+                }
+            ],
+            "search": [],
+        }
+    )
+
+    metrics = collect_metrics(
+        client,  # type: ignore[arg-type]
+        "alan",
+        "my-org",
+        ["frontend-app"],
+        datetime(2026, 3, 1, tzinfo=timezone.utc),
+        datetime(2026, 5, 31, tzinfo=timezone.utc),
+    )
+
+    assert [commit.sha for commit in metrics.commits] == ["abc"]
+    assert metrics.commits[0].message == "Feature branch work"
+
+
+def test_collect_metrics_deduplicates_commits_found_on_multiple_branches() -> None:
+    client = FakeGithubClient(
+        {
+            "pulls:my-org/frontend-app": [],
+            "branches:my-org/frontend-app": [{"name": "main"}, {"name": "feature/alpha"}],
+            "commits:my-org/frontend-app:main": [
+                {
+                    "sha": "abc",
+                    "commit": {"message": "Shared commit", "author": {"date": "2026-03-10T10:00:00Z"}},
+                    "html_url": "https://github.com/my-org/frontend-app/commit/abc",
+                }
+            ],
+            "commits:my-org/frontend-app:feature/alpha": [
+                {
+                    "sha": "abc",
+                    "commit": {"message": "Shared commit", "author": {"date": "2026-03-10T10:00:00Z"}},
+                    "html_url": "https://github.com/my-org/frontend-app/commit/abc",
+                },
+                {
+                    "sha": "def",
+                    "commit": {"message": "Feature-only commit", "author": {"date": "2026-03-11T10:00:00Z"}},
+                    "html_url": "https://github.com/my-org/frontend-app/commit/def",
+                },
+            ],
+            "search": [],
+        }
+    )
+
+    metrics = collect_metrics(
+        client,  # type: ignore[arg-type]
+        "alan",
+        "my-org",
+        ["frontend-app"],
+        datetime(2026, 3, 1, tzinfo=timezone.utc),
+        datetime(2026, 5, 31, tzinfo=timezone.utc),
+    )
+
+    assert [(commit.sha, commit.message) for commit in metrics.commits] == [
+        ("abc", "Shared commit"),
+        ("def", "Feature-only commit"),
     ]
 
 
